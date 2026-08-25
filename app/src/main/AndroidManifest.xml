@@ -12,7 +12,6 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
 
-        <!-- Google Mobile Ads App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-1215580137922140~8786907223" />
