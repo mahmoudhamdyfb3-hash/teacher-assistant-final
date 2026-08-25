@@ -41,7 +41,7 @@ public class LessonAlarmReceiver extends BroadcastReceiver {
         if (place != null && !place.trim().isEmpty()) body.append(" • ").append(place);
 
         Notification notification = new NotificationCompat.Builder(context, NotificationScheduler.CHANNEL_ID)
-                .setSmallIcon(com.mahmoud.teacherassistant.R.mipmap.ic_launcher)
+                .setSmallIcon(com.mahmoud.teacherassistant.R.mipmap.ic_teacher_assistant)
                 .setContentTitle(title)
                 .setContentText(body.toString())
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(body.toString()))
