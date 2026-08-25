@@ -1,4 +1,4 @@
-name: Build signed Android AAB
+name: Build Android AAB
 
 on:
   workflow_dispatch:
@@ -31,35 +31,11 @@ jobs:
         with:
           gradle-version: 8.9
 
-      - name: Create upload keystore from secret
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      - name: Build release AAB
         run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > upload-keystore.jks
+          gradle :app:bundleRelease --no-daemon
 
-      - name: Verify keystore
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        run: |
-          keytool -list \
-            -keystore upload-keystore.jks \
-            -storepass "$KEYSTORE_PASSWORD" \
-            -alias "${{ secrets.ANDROID_KEY_ALIAS }}"
-
-      - name: Build signed release AAB
-        env:
-          KEYSTORE_FILE: ${{ github.workspace }}/upload-keystore.jks
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          gradle :app:bundleRelease --no-daemon \
-            -Pandroid.injected.signing.store.file="$KEYSTORE_FILE" \
-            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
-
-      - name: Upload signed AAB
+      - name: Upload unsigned AAB
         uses: actions/upload-artifact@v4
         with:
           name: teacher-assistant-release-aab
