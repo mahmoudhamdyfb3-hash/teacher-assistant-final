@@ -14,12 +14,12 @@ android {
         versionName = "1.4.0"
     }
 
-   signingConfigs {
+  signingConfigs {
     create("release") {
         storeFile = file("../teacher-assistant-upload-new.jks")
-        storePassword = providers.gradleProperty("KEYSTORE_PASSWORD").orNull
+        storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
         keyAlias = "teacherassistant"
-        keyPassword = providers.gradleProperty("KEY_PASSWORD").orNull
+        keyPassword = System.getenv("KEY_PASSWORD") ?: ""
     }
 }
 
