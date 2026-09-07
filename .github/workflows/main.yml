@@ -38,6 +38,15 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > teacher-assistant-upload-new.jks
           test -s teacher-assistant-upload-new.jks
 
+      - name: Verify signing key
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          keytool -list \
+            -keystore teacher-assistant-upload-new.jks \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias teacherassistant
+
       - name: Build release AAB
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
