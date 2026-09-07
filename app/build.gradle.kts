@@ -16,7 +16,7 @@ android {
 
   signingConfigs {
     create("release") {
-        storeFile = file("${rootProject.projectDir}/upload-keystore.jks")
+        storeFile = file("${project.rootDir}/upload-keystore.jks")
         storePassword = providers.gradleProperty("KEYSTORE_PASSWORD").orNull
         keyAlias = providers.gradleProperty("KEY_ALIAS").orNull
         keyPassword = providers.gradleProperty("KEY_PASSWORD").orNull
