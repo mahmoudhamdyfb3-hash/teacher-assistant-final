@@ -12,6 +12,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
+import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
 import android.view.ViewGroup;
@@ -136,6 +140,12 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(
                 new AndroidWhatsApp(),
                 "AndroidWhatsApp"
+        );
+
+        // Native print bridge for the exam builder.
+        webView.addJavascriptInterface(
+                new AndroidExamPrinter(),
+                "AndroidExamPrinter"
         );
 
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
@@ -690,6 +700,41 @@ public class MainActivity extends Activity {
             currentMime = null;
 
             new Thread(() -> saveToDownloads(name, mime, data)).start();
+        }
+    }
+
+    private class AndroidExamPrinter {
+        @JavascriptInterface
+        public void printExam() {
+            runOnUiThread(() -> {
+                try {
+                    PrintManager printManager =
+                            (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                    if (printManager == null || webView == null) {
+                        showToast("تعذر فتح نافذة حفظ PDF");
+                        return;
+                    }
+
+                    String jobName = "امتحان - مساعد المعلم الذكي";
+                    PrintDocumentAdapter adapter;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        adapter = webView.createPrintDocumentAdapter(jobName);
+                    } else {
+                        adapter = webView.createPrintDocumentAdapter();
+                    }
+
+                    printManager.print(
+                            jobName,
+                            adapter,
+                            new PrintAttributes.Builder()
+                                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                                    .build()
+                    );
+                } catch (Exception e) {
+                    Log.e(TAG, "Exam print failed", e);
+                    showToast("تعذر فتح نافذة حفظ PDF");
+                }
+            });
         }
     }
 
