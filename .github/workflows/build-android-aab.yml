@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android AAB
 
 on:
   workflow_dispatch:
@@ -48,19 +48,19 @@ jobs:
           KEY_ALIAS="$(keytool -list -v -keystore upload-keystore.jks -storepass "$KEYSTORE_PASSWORD" | awk -F': ' '/Alias name:/{print $2; exit}')"
           echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
 
-      - name: Build release APK
+      - name: Build release AAB
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.KEYSTORE_PASSWORD }}
         run: >
-          gradle :app:assembleRelease --no-daemon
+          gradle :app:bundleRelease --no-daemon
           -PKEYSTORE_PASSWORD="$KEYSTORE_PASSWORD"
           -PKEY_ALIAS="$KEY_ALIAS"
           -PKEY_PASSWORD="$KEY_PASSWORD"
 
-      - name: Upload release APK
+      - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
-          name: teacher-assistant-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: teacher-assistant-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
