@@ -41,11 +41,17 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: echo "$KEYSTORE_BASE64" | base64 --decode > upload-keystore.jks
 
+      - name: Read keystore alias
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          KEY_ALIAS="$(keytool -list -v -keystore upload-keystore.jks -storepass "$KEYSTORE_PASSWORD" | awk -F': ' '/Alias name:/{print $2; exit}')"
+          echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+
       - name: Build release APK
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.KEYSTORE_PASSWORD }}
         run: >
           gradle :app:assembleRelease --no-daemon
           -PKEYSTORE_PASSWORD="$KEYSTORE_PASSWORD"
