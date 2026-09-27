@@ -6,11 +6,13 @@ import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
@@ -42,6 +44,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.json.JSONObject;
+
 public class MainActivity extends Activity {
     private static final String TAG = "TeacherAssistantNotif";
     private static final int REQ_NOTIFICATIONS = 3101;
@@ -55,6 +59,7 @@ public class MainActivity extends Activity {
     private AdView adView;
     private ValueCallback<Uri[]> fileChooserCallback;
     private static final int REQ_FILE_CHOOSER = 4101;
+    private static final int REQ_CONTACT_PICKER = 4102;
 
     private final BackupFileReceiver backupFileReceiver = new BackupFileReceiver();
 
@@ -140,6 +145,13 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(
                 new AndroidWhatsApp(),
                 "AndroidWhatsApp"
+        );
+
+        // Lets the student form choose one phone number through Android's
+        // system contact picker. It does not require access to all contacts.
+        webView.addJavascriptInterface(
+                new AndroidContacts(),
+                "AndroidContacts"
         );
 
         // Native print bridge for the exam builder.
@@ -244,6 +256,43 @@ public class MainActivity extends Activity {
 
             fileChooserCallback.onReceiveValue(results);
             fileChooserCallback = null;
+            return;
+        }
+
+        if (requestCode == REQ_CONTACT_PICKER) {
+            if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null) {
+                return;
+            }
+
+            String phoneNumber = "";
+            try (Cursor cursor = getContentResolver().query(
+                    data.getData(),
+                    new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER},
+                    null,
+                    null,
+                    null
+            )) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int numberIndex = cursor.getColumnIndex(
+                            ContactsContract.CommonDataKinds.Phone.NUMBER
+                    );
+                    if (numberIndex >= 0) {
+                        phoneNumber = cursor.getString(numberIndex);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Could not read selected contact number", e);
+            }
+
+            if (!phoneNumber.isEmpty() && webView != null) {
+                String safePhoneNumber = JSONObject.quote(phoneNumber);
+                webView.evaluateJavascript(
+                        "window.dispatchEvent(new CustomEvent('teacherassistant:contact-phone',{detail:"
+                                + safePhoneNumber
+                                + "}));",
+                        null
+                );
+            }
         }
     }
 
@@ -474,6 +523,24 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void openGroupWithMessage(String groupUrl, String message) {
             openWhatsAppGroupDirect(groupUrl, message);
+        }
+    }
+
+    private class AndroidContacts {
+        @JavascriptInterface
+        public void pickPhoneNumber() {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(
+                            Intent.ACTION_PICK,
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+                    );
+                    startActivityForResult(intent, REQ_CONTACT_PICKER);
+                } catch (Exception e) {
+                    Log.e(TAG, "Could not open contact picker", e);
+                    showToast("تعذر فتح جهات الاتصال ❌");
+                }
+            });
         }
     }
 
