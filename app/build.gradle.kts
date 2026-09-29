@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "com.mahmoud.teacherassistant"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 36
         versionCode = 34
         versionName = "1.20.3"
