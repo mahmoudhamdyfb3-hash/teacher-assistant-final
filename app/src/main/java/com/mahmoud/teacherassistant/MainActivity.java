@@ -35,6 +35,11 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.Timestamp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -42,10 +47,14 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 public class MainActivity extends Activity {
     private static final String TAG = "TeacherAssistantNotif";
@@ -159,6 +168,26 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(
                 new AndroidExamPrinter(),
                 "AndroidExamPrinter"
+        );
+
+        webView.addJavascriptInterface(
+                new AndroidFirebaseAuth(),
+                "AndroidFirebaseAuth"
+        );
+
+        webView.addJavascriptInterface(
+                new AndroidFirebaseData(),
+                "AndroidFirebaseData"
+        );
+
+        webView.addJavascriptInterface(
+                new AndroidFirebaseTeam(),
+                "AndroidFirebaseTeam"
+        );
+
+        webView.addJavascriptInterface(
+                new AndroidFinanceLock(),
+                "AndroidFinanceLock"
         );
 
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
@@ -519,6 +548,332 @@ public class MainActivity extends Activity {
                     MainActivity.this::openExactAlarmSettingsIfNeeded
             );
         }
+    }
+
+    private class AndroidFirebaseAuth {
+        @JavascriptInterface
+        public void signIn(String email, String password) {
+            FirebaseAuth.getInstance()
+                    .signInWithEmailAndPassword(email == null ? "" : email.trim(), password == null ? "" : password)
+                    .addOnCompleteListener(task -> sendFirebaseAuthResult(
+                            task.isSuccessful(),
+                            task.isSuccessful() ? "" : firebaseError(task.getException())
+                    ));
+        }
+
+        @JavascriptInterface
+        public void createAccount(String email, String password) {
+            FirebaseAuth.getInstance()
+                    .createUserWithEmailAndPassword(email == null ? "" : email.trim(), password == null ? "" : password)
+                    .addOnCompleteListener(task -> sendFirebaseAuthResult(
+                            task.isSuccessful(),
+                            task.isSuccessful() ? "" : firebaseError(task.getException())
+                    ));
+        }
+    }
+
+    private String firebaseError(Exception error) {
+        return error == null || error.getMessage() == null
+                ? "تعذر إتمام تسجيل الدخول. حاول مرة أخرى."
+                : error.getMessage();
+    }
+
+    private void sendFirebaseAuthResult(boolean success, String error) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:firebase-auth',{detail:{success:"
+                + success
+                + ",error:"
+                + JSONObject.quote(error == null ? "" : error)
+                + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private class AndroidFirebaseData {
+        @JavascriptInterface
+        public void syncWorkspaceState(String workspaceId, String key, String value) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            String workspace = workspaceId == null || workspaceId.trim().isEmpty()
+                    ? (user == null ? "" : user.getUid()) : workspaceId.trim();
+            if (user == null || key == null || !key.matches("[a-zA-Z0-9_-]{1,40}")) return;
+            Map<String, Object> state = new HashMap<>();
+            state.put("value", value == null ? "{}" : value);
+            state.put("updatedAt", FieldValue.serverTimestamp());
+            FirebaseFirestore.getInstance().collection("workspaces").document(workspace)
+                    .collection("sharedState").document(key).set(state);
+        }
+
+        @JavascriptInterface
+        public void loadWorkspaceState(String workspaceId, String key) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            String workspace = workspaceId == null || workspaceId.trim().isEmpty()
+                    ? (user == null ? "" : workspaceId.trim()) : workspaceId.trim();
+            if (user == null || key == null || !key.matches("[a-zA-Z0-9_-]{1,40}")) return;
+            FirebaseFirestore.getInstance().collection("workspaces").document(workspace)
+                    .collection("sharedState").document(key).get()
+                    .addOnSuccessListener(doc -> sendWorkspaceState(key, doc.exists() ? doc.getString("value") : "{}"));
+        }
+
+        @JavascriptInterface
+        public void loadWorkspaceStudents(String workspaceId) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null || workspaceId == null || workspaceId.trim().isEmpty()) return;
+            FirebaseFirestore.getInstance().collection("students")
+                    .whereEqualTo("teacherId", workspaceId.trim()).get()
+                    .addOnSuccessListener(snapshot -> {
+                        JSONArray students = new JSONArray();
+                        for (com.google.firebase.firestore.DocumentSnapshot document : snapshot.getDocuments()) {
+                            String raw = document.getString("raw");
+                            if (raw == null) continue;
+                            try { students.put(new JSONObject(raw)); } catch (Exception ignored) { }
+                        }
+                        sendWorkspaceStudents(students.toString(), "");
+                    })
+                    .addOnFailureListener(error -> sendWorkspaceStudents("[]", firebaseError(error)));
+        }
+
+        @JavascriptInterface
+        public void syncWorkspaceStudents(String studentsJson, String workspaceId) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            String workspace = workspaceId == null ? "" : workspaceId.trim();
+            if (user == null || workspace.isEmpty()) return;
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("workspaces").document(workspace).collection("staff").document(user.getUid()).get()
+                    .addOnSuccessListener(membership -> {
+                        if (!membership.exists()) return;
+                        try {
+                            JSONArray students = new JSONArray(studentsJson == null ? "[]" : studentsJson);
+                            for (int i = 0; i < students.length(); i++) {
+                                JSONObject student = students.optJSONObject(i);
+                                if (student == null || student.optString("id").isEmpty()) continue;
+                                Map<String, Object> record = new HashMap<>();
+                                record.put("teacherId", workspace);
+                                record.put("studentId", student.optString("id"));
+                                record.put("name", student.optString("name"));
+                                record.put("grade", student.optString("grade"));
+                                record.put("group", student.optString("group"));
+                                record.put("raw", student.toString());
+                                record.put("updatedAt", FieldValue.serverTimestamp());
+                                db.collection("students").document(workspace + "_" + student.optString("id")).set(record);
+                            }
+                        } catch (Exception ignored) { }
+                    });
+        }
+
+        @JavascriptInterface
+        public void syncTeacherData(String studentsJson, String linkCodesJson) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null) return;
+            try {
+                JSONArray students = new JSONArray(studentsJson == null ? "[]" : studentsJson);
+                JSONObject codes = new JSONObject(linkCodesJson == null ? "{}" : linkCodesJson);
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                for (int i = 0; i < students.length(); i++) {
+                    JSONObject student = students.optJSONObject(i);
+                    if (student == null || student.optString("id").isEmpty()) continue;
+                    String documentId = user.getUid() + "_" + student.optString("id");
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("teacherId", user.getUid());
+                    data.put("studentId", student.optString("id"));
+                    data.put("name", student.optString("name"));
+                    data.put("grade", student.optString("grade"));
+                    data.put("group", student.optString("group"));
+                    data.put("raw", student.toString());
+                    data.put("updatedAt", FieldValue.serverTimestamp());
+                    db.collection("students").document(documentId).set(data);
+
+                    String code = codes.optString(student.optString("id"));
+                    if (!code.isEmpty()) {
+                        Map<String, Object> link = new HashMap<>();
+                        link.put("teacherId", user.getUid());
+                        link.put("studentDocumentId", documentId);
+                        link.put("studentName", student.optString("name"));
+                        link.put("updatedAt", FieldValue.serverTimestamp());
+                        db.collection("parentLinkCodes").document(code.toUpperCase()).set(link);
+                    }
+                }
+            } catch (Exception ignored) { }
+        }
+
+        @JavascriptInterface
+        public void linkStudentCode(String code) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            String cleanCode = code == null ? "" : code.trim().toUpperCase();
+            if (user == null || cleanCode.isEmpty()) {
+                sendStudentLinkResult(false, "سجّل دخولك أولًا ثم أعد المحاولة.", "");
+                return;
+            }
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("parentLinkCodes").document(cleanCode).get()
+                    .addOnSuccessListener(link -> {
+                        if (!link.exists() || link.getString("studentDocumentId") == null) {
+                            sendStudentLinkResult(false, "كود الربط غير صحيح.", "");
+                            return;
+                        }
+                        String studentDocumentId = link.getString("studentDocumentId");
+                        // The link is stored below the authenticated parent's account.
+                        // Firestore rules verify that this exact code belongs to this student
+                        // before allowing the write, so a parent cannot attach another student
+                        // by guessing a document id.
+                        Map<String, Object> parentLink = new HashMap<>();
+                        parentLink.put("linkCode", cleanCode);
+                        parentLink.put("studentDocumentId", studentDocumentId);
+                        parentLink.put("createdAt", FieldValue.serverTimestamp());
+                        db.collection("parents").document(user.getUid())
+                                .collection("studentLinks").document(studentDocumentId)
+                                .set(parentLink)
+                                .addOnSuccessListener(unused -> db.collection("students").document(studentDocumentId).get()
+                                .addOnSuccessListener(student -> {
+                                    String raw = student.getString("raw");
+                                    if (!student.exists() || raw == null) {
+                                        sendStudentLinkResult(false, "تعذر العثور على بيانات الطالب.", "");
+                                        return;
+                                    }
+                                    sendStudentLinkResult(true, "", raw);
+                                })
+                                .addOnFailureListener(error -> sendStudentLinkResult(false, firebaseError(error), "")))
+                                .addOnFailureListener(error -> sendStudentLinkResult(false, firebaseError(error), ""));
+                    })
+                    .addOnFailureListener(error -> sendStudentLinkResult(false, firebaseError(error), ""));
+        }
+    }
+
+    private void sendStudentLinkResult(boolean success, String error, String studentJson) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:student-link',{detail:{success:"
+                + success + ",error:" + JSONObject.quote(error == null ? "" : error)
+                + ",student:" + JSONObject.quote(studentJson == null ? "" : studentJson) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private void sendWorkspaceStudents(String studentsJson, String error) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:workspace-students',{detail:{students:"
+                + JSONObject.quote(studentsJson == null ? "[]" : studentsJson)
+                + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private void sendWorkspaceState(String key, String value) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:workspace-state',{detail:{key:"
+                + JSONObject.quote(key == null ? "" : key) + ",value:"
+                + JSONObject.quote(value == null ? "{}" : value) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private class AndroidFirebaseTeam {
+        @JavascriptInterface
+        public void createSecretaryInvite() {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null) {
+                sendTeamResult(false, "سجّل دخولك كمعلم أولًا.", "", "");
+                return;
+            }
+            String code = "STAFF-" + UUID.randomUUID().toString()
+                    .replace("-", "").substring(0, 12).toUpperCase();
+            Map<String, Object> invite = new HashMap<>();
+            invite.put("ownerId", user.getUid());
+            invite.put("role", "secretary");
+            invite.put("createdAt", FieldValue.serverTimestamp());
+            FirebaseFirestore.getInstance().collection("teamInvites").document(code).set(invite)
+                    .addOnSuccessListener(unused -> sendTeamResult(true, "", code, ""))
+                    .addOnFailureListener(error -> sendTeamResult(false, firebaseError(error), "", ""));
+        }
+
+        @JavascriptInterface
+        public void joinSecretaryInvite(String code) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            String cleanCode = code == null ? "" : code.trim().toUpperCase();
+            if (user == null || cleanCode.isEmpty()) {
+                sendTeamResult(false, "سجّل دخولك ثم اكتب كود الدعوة.", "", "");
+                return;
+            }
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("teamInvites").document(cleanCode).get()
+                    .addOnSuccessListener(invite -> {
+                        String ownerId = invite.getString("ownerId");
+                        if (!invite.exists() || ownerId == null || ownerId.equals(user.getUid())) {
+                            sendTeamResult(false, "كود دعوة السكرتيرة غير صحيح.", "", "");
+                            return;
+                        }
+                        Map<String, Object> member = new HashMap<>();
+                        member.put("role", "secretary");
+                        member.put("inviteCode", cleanCode);
+                        member.put("joinedAt", FieldValue.serverTimestamp());
+                        db.collection("workspaces").document(ownerId).collection("staff")
+                                .document(user.getUid()).set(member)
+                                .addOnSuccessListener(unused -> sendSecretaryJoinResult(ownerId))
+                                .addOnFailureListener(error -> sendTeamResult(false, firebaseError(error), "", ""));
+                    })
+                    .addOnFailureListener(error -> sendTeamResult(false, firebaseError(error), "", ""));
+        }
+    }
+
+    private void sendTeamResult(boolean success, String error, String code, String workspaceId) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:team',{detail:{success:"
+                + success + ",error:" + JSONObject.quote(error == null ? "" : error)
+                + ",code:" + JSONObject.quote(code == null ? "" : code)
+                + ",workspaceId:" + JSONObject.quote(workspaceId == null ? "" : workspaceId) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private class AndroidFinanceLock {
+        @JavascriptInterface
+        public void setPin(String workspaceId, String pin) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            String workspace = workspaceId == null || workspaceId.trim().isEmpty()
+                    ? (user == null ? "" : user.getUid()) : workspaceId.trim();
+            if (user == null || !user.getUid().equals(workspace) || pin == null || !pin.matches("\\d{6}")) {
+                sendFinanceResult(false, "رقم المالية يجب أن يكون 6 أرقام ويحدده المعلّم فقط.");
+                return;
+            }
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("workspaces").document(workspace).collection("financeSecurity").document("current").get()
+                    .addOnSuccessListener(existing -> {
+                        long version = existing.exists() ? existing.getLong("version") == null ? 1 : existing.getLong("version") + 1 : 1;
+                        Map<String, Object> security = new HashMap<>();
+                        security.put("pin", pin);
+                        security.put("version", version);
+                        security.put("updatedAt", FieldValue.serverTimestamp());
+                        db.collection("workspaces").document(workspace).collection("financeSecurity").document("current").set(security)
+                                .addOnSuccessListener(unused -> sendFinanceResult(true, "تم حفظ رقم المالية وقفل الجلسات القديمة."))
+                                .addOnFailureListener(error -> sendFinanceResult(false, firebaseError(error)));
+                    })
+                    .addOnFailureListener(error -> sendFinanceResult(false, firebaseError(error)));
+        }
+
+        @JavascriptInterface
+        public void unlock(String workspaceId, String pin) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            String workspace = workspaceId == null || workspaceId.trim().isEmpty()
+                    ? (user == null ? "" : user.getUid()) : workspaceId.trim();
+            if (user == null || pin == null || !pin.matches("\\d{6}")) {
+                sendFinanceResult(false, "اكتب رقم المالية المكوّن من 6 أرقام.");
+                return;
+            }
+            Map<String, Object> session = new HashMap<>();
+            session.put("pin", pin);
+            session.put("expiresAt", new Timestamp(new Date(System.currentTimeMillis() + 8L * 60L * 60L * 1000L)));
+            FirebaseFirestore.getInstance().collection("workspaces").document(workspace)
+                    .collection("financeSessions").document(user.getUid()).set(session)
+                    .addOnSuccessListener(unused -> sendFinanceResult(true, "تم فتح قسم المالية لمدة 8 ساعات."))
+                    .addOnFailureListener(error -> sendFinanceResult(false, "رقم المالية غير صحيح أو لا تملك صلاحية الدخول."));
+        }
+    }
+
+    private void sendFinanceResult(boolean success, String message) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:finance-lock',{detail:{success:"
+                + success + ",message:" + JSONObject.quote(message == null ? "" : message) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private void sendSecretaryJoinResult(String workspaceId) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:secretary-joined',{detail:{workspaceId:"
+                + JSONObject.quote(workspaceId == null ? "" : workspaceId) + "}}));";
+        webView.evaluateJavascript(js, null);
     }
 
     private class AndroidWhatsApp {

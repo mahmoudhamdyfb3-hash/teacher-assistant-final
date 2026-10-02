@@ -1,0 +1,106 @@
+rules_version = '2';
+
+// Teacher Assistant: the teacher owns student records; a parent obtains access
+// only by redeeming a matching parent-link code for that one student.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function parentLinkedTo(studentId) {
+      return exists(/databases/$(database)/documents/parents/$(request.auth.uid)/studentLinks/$(studentId));
+    }
+
+    function workspaceMember(workspaceId) {
+      return request.auth.uid == workspaceId
+        || exists(/databases/$(database)/documents/workspaces/$(workspaceId)/staff/$(request.auth.uid));
+    }
+
+    match /students/{studentId} {
+      allow create: if signedIn()
+        && workspaceMember(request.resource.data.teacherId);
+      allow read: if signedIn()
+        && (workspaceMember(resource.data.teacherId) || parentLinkedTo(studentId));
+      allow update, delete: if signedIn()
+        && workspaceMember(resource.data.teacherId);
+    }
+
+    // Codes contain no student report data. A signed-in parent may look up a
+    // code it was given, but cannot write, alter, or enumerate codes.
+    match /parentLinkCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && workspaceMember(request.resource.data.teacherId);
+      allow update, delete: if signedIn()
+        && workspaceMember(resource.data.teacherId);
+    }
+
+    match /parents/{parentId}/studentLinks/{studentId} {
+      allow read: if signedIn() && request.auth.uid == parentId;
+      allow create: if signedIn()
+        && request.auth.uid == parentId
+        && request.resource.data.linkCode is string
+        && exists(/databases/$(database)/documents/parentLinkCodes/$(request.resource.data.linkCode))
+        && get(/databases/$(database)/documents/parentLinkCodes/$(request.resource.data.linkCode)).data.studentDocumentId == studentId;
+      allow delete: if signedIn() && request.auth.uid == parentId;
+      allow update: if false;
+    }
+
+    // A teacher can issue a high-entropy, one-time-style invite code for a
+    // secretary. Codes cannot be listed or altered by the recipient.
+    match /teamInvites/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.role == "secretary";
+      allow update, delete: if signedIn()
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /workspaces/{workspaceId}/staff/{memberId} {
+      allow read: if signedIn()
+        && (request.auth.uid == workspaceId || request.auth.uid == memberId);
+      allow create: if signedIn()
+        && request.auth.uid == memberId
+        && request.resource.data.role == "secretary"
+        && request.resource.data.inviteCode is string
+        && exists(/databases/$(database)/documents/teamInvites/$(request.resource.data.inviteCode))
+        && get(/databases/$(database)/documents/teamInvites/$(request.resource.data.inviteCode)).data.ownerId == workspaceId;
+      allow delete: if signedIn()
+        && (request.auth.uid == workspaceId || request.auth.uid == memberId);
+      allow update: if false;
+    }
+
+    // The PIN document is never readable from a device. A finance session is
+    // created only when its PIN matches that hidden value, and expires within
+    // eight hours. Changing the PIN invalidates older sessions automatically.
+    match /workspaces/{workspaceId}/financeSecurity/{documentId} {
+      allow read: if false;
+      allow create, update, delete: if signedIn() && request.auth.uid == workspaceId;
+    }
+
+    match /workspaces/{workspaceId}/financeSessions/{memberId} {
+      allow read: if signedIn() && request.auth.uid == memberId;
+      allow create, update: if signedIn()
+        && request.auth.uid == memberId
+        && request.resource.data.pin is string
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt <= request.time + duration.value(8, 'h')
+        && exists(/databases/$(database)/documents/workspaces/$(workspaceId)/financeSecurity/current)
+        && request.resource.data.pin == get(/databases/$(database)/documents/workspaces/$(workspaceId)/financeSecurity/current).data.pin;
+      allow delete: if signedIn() && request.auth.uid == memberId;
+    }
+
+    match /workspaces/{workspaceId}/sharedState/{stateKey} {
+      allow read, write: if signedIn() && workspaceMember(workspaceId);
+    }
+
+    // No other client-side documents are public.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

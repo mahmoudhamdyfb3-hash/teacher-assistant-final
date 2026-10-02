@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -60,4 +61,7 @@ android {
 dependencies {
     implementation("androidx.core:core:1.15.0")
     implementation("com.google.android.gms:play-services-ads:25.4.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
 }
