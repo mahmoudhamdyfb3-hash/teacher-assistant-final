@@ -942,5 +942,15 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   });
 })();
 </script>
+<script id="disable-finance-lock-v1">
+(function(){
+  try{localStorage.removeItem('finance_lock_v1');}catch(e){}
+  try{sessionStorage.setItem('ta_finance_open','1');}catch(e){}
+  ['finance-lock-settings-v10','finance-lock-dialog-v10','ta-finance-pin-launch'].forEach(function(id){
+    var element=document.getElementById(id);
+    if(element)element.remove();
+  });
+})();
+</script>
 </body>
 </html>
