@@ -905,5 +905,42 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
 <style id="team-finance-lock-v1-style">#ta-finance-pin-launch{position:fixed;z-index:1001;left:16px;bottom:138px;padding:10px 12px;border:0;border-radius:13px;background:#7c3aed;color:#fff;font:700 12px Arial;box-shadow:0 10px 22px #7c3aed55}</style><script id="team-finance-lock-v1">(function(){function role(){return localStorage.getItem('ta_parent_portal_preview_role')||'teacher'}function workspace(){return role()==='secretary'?(localStorage.getItem('ta_workspace_id')||''):''}function msg(x){alert(x)}var set=document.createElement('button');set.id='ta-finance-pin-launch';set.type='button';set.textContent='🔐 رقم المالية';document.body.appendChild(set);function show(){set.style.display=role()==='teacher'?'block':'none'}show();set.onclick=function(){var p=prompt('اكتب رقمًا سريًا جديدًا للمالية من 6 أرقام');if(p===null)return;if(!/^\d{6}$/.test(p)){msg('الرقم يجب أن يكون 6 أرقام.');return}var c=prompt('اكتب الرقم مرة أخرى للتأكيد');if(c!==p){msg('الرقمان غير متطابقين.');return}if(window.AndroidFinanceLock)window.AndroidFinanceLock.setPin('',p);else msg('يتوفر القفل المشترك داخل تطبيق Android فقط.');};document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button');if(!b||(b.textContent||'').trim()!=='المالية'||sessionStorage.getItem('ta_finance_open')==='1')return;e.preventDefault();e.stopImmediatePropagation();var p=prompt('قسم المالية مقفل. اكتب الرقم السري (6 أرقام)');if(!p)return;if(window.AndroidFinanceLock)window.AndroidFinanceLock.unlock(workspace(),p);else msg('يتوفر القفل المشترك داخل تطبيق Android فقط.');},true);window.addEventListener('teacherassistant:finance-lock',function(e){var d=e.detail||{};msg(d.message||'تعذر تنفيذ الطلب.');if(!d.success)return;sessionStorage.setItem('ta_finance_open','1');var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return(x.textContent||'').trim()==='المالية'});if(b)b.click();});})();</script>
 <script id="team-attendance-sync-v1">(function(){function role(){return localStorage.getItem('ta_parent_portal_preview_role')||'teacher'}function workspace(){return role()==='secretary'?(localStorage.getItem('ta_workspace_id')||''):''}function sync(){if(role()==='parent'||!window.AndroidFirebaseData)return;window.AndroidFirebaseData.syncWorkspaceState(workspace(),'attendance',localStorage.getItem('attendance')||'{}');window.AndroidFirebaseData.loadWorkspaceState(workspace(),'attendance')}window.addEventListener('teacherassistant:workspace-state',function(e){var d=e.detail||{};if(d.key!=='attendance'||role()==='parent')return;try{if(d.value&&d.value!==localStorage.getItem('attendance'))localStorage.setItem('attendance',d.value)}catch(x){}});setTimeout(sync,1200);setInterval(sync,7000)})();</script>
 <script id="team-learning-sync-v1">(function(){var keys=['homework','examResults','results','studentNotes'];function role(){return localStorage.getItem('ta_parent_portal_preview_role')||'teacher'}function workspace(){return role()==='secretary'?(localStorage.getItem('ta_workspace_id')||''):''}function run(){if(role()==='parent'||!window.AndroidFirebaseData)return;keys.forEach(function(k){window.AndroidFirebaseData.syncWorkspaceState(workspace(),k,localStorage.getItem(k)||'{}');window.AndroidFirebaseData.loadWorkspaceState(workspace(),k)})}window.addEventListener('teacherassistant:workspace-state',function(e){var d=e.detail||{};if(keys.indexOf(d.key)<0||role()==='parent')return;try{if(d.value)localStorage.setItem(d.key,d.value)}catch(x){}});setTimeout(run,1600);setInterval(run,7000)})();</script>
+<script id="group-price-persistence-v21">
+(function(){
+  'use strict';
+  var key='mosaed_groups', nativeSet=Storage.prototype.setItem;
+  function read(text){try{var value=JSON.parse(text||'[]');return Array.isArray(value)?value:[];}catch(e){return [];}}
+  function selectedPrice(){
+    var dialog=Array.from(document.querySelectorAll('.fixed')).find(function(node){var title=node.querySelector('h3');return title&&(/إضافة مجموعة جديدة|تعديل المجموعة/).test((title.textContent||'').trim());});
+    if(!dialog)return null;
+    var name=dialog.querySelector('input[placeholder*="الصف الثالث"]'), price=dialog.querySelector('#group-price-v12-input'), mode=dialog.querySelector('#group-payment-mode-v12');
+    var amount=Number(price&&price.value);
+    return name&&name.value.trim()&&Number.isFinite(amount)&&amount>0?{name:name.value.trim(),price:Math.round(amount*100)/100,paymentType:mode&&mode.value==='session'?'session':'monthly'}:null;
+  }
+  Storage.prototype.setItem=function(storageKey,value){
+    if(storageKey!==key)return nativeSet.call(this,storageKey,value);
+    try{
+      var previous=read(this.getItem(key)), incoming=read(value), current=selectedPrice();
+      var preserved={};
+      previous.forEach(function(group){if(group&&group.name&&Number(group.price)>0)preserved[group.id||group.name]=group;});
+      incoming=incoming.map(function(group){
+        if(!group||!group.name)return group;
+        var old=preserved[group.id||group.name], chosen=current&&current.name===group.name?current:null, price=chosen?chosen.price:(Number(group.price)>0?Number(group.price):(old&&Number(old.price)>0?Number(old.price):0)), paymentType=chosen?chosen.paymentType:(group.paymentType||(old&&old.paymentType)||'monthly');
+        return price>0?Object.assign({},group,{price:price,paymentType:paymentType,payLabel:paymentType==='session'?'الدفع بالحصة':'دفع شهري'}):group;
+      });
+      value=JSON.stringify(incoming);
+    }catch(e){}
+    return nativeSet.call(this,storageKey,value);
+  };
+})();
+</script>
+<script id="remove-extra-floating-controls-v1">
+(function(){
+  ['ta-finance-pin-launch','ta-parent-codes-launch','ta-team-launch','ta-parent-codes-modal','ta-team-modal'].forEach(function(id){
+    var element=document.getElementById(id);
+    if(element)element.remove();
+  });
+})();
+</script>
 </body>
 </html>
