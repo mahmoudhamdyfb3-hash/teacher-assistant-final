@@ -952,5 +952,50 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   });
 })();
 </script>
+<script id="backfill-existing-group-student-prices-v1">
+(function(){
+  'use strict';
+  function readList(key){try{var value=JSON.parse(localStorage.getItem(key)||'');return Array.isArray(value)?value:[];}catch(e){return [];}}
+  function readObject(key){try{var value=JSON.parse(localStorage.getItem(key)||'');return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(e){return {};}}
+  function roundMoney(value){return Math.round(value*100)/100;}
+  var groups=readList('mosaed_groups');
+  var students=readList('students');
+  var discounts=readObject('student_discounts_v1');
+  var prices={};
+  groups.forEach(function(group){
+    if(!group||!group.name)return;
+    var base=Number(group.price);
+    if(!Number.isFinite(base)||base<=0)return;
+    var total=group.paymentType==='session'?base*Math.max(1,Number(group.sessions)||1):base;
+    prices[String(group.name).trim()]=roundMoney(total);
+  });
+  var changed=false;
+  var updated=students.map(function(student){
+    if(!student||typeof student!=='object')return student;
+    var groupName=String(student.group||'').trim();
+    var price=prices[groupName];
+    var status=String(student.paidStatus||'').trim();
+    if(!Number.isFinite(price)||price<=0||status==='exempt'||status==='معفى')return student;
+    var rawAmount=student.amount;
+    var numericAmount=Number(rawAmount);
+    var needsPrice=rawAmount===null||rawAmount===undefined||rawAmount===''||!Number.isFinite(numericAmount)||numericAmount<=0;
+    if(!needsPrice)return student;
+    var amount=price;
+    var discount=discounts[groupName+'|'+String(student.name||'').trim()];
+    if(discount&&typeof discount==='object'){
+      var discountValue=Math.max(0,Number(discount.value)||0);
+      if(discount.type==='percent')amount=price*(1-Math.min(100,discountValue)/100);
+      if(discount.type==='fixed')amount=Math.max(0,price-discountValue);
+    }
+    amount=roundMoney(amount);
+    changed=true;
+    return Object.assign({},student,{amount:amount});
+  });
+  if(changed){
+    localStorage.setItem('students',JSON.stringify(updated));
+    setTimeout(function(){location.reload();},0);
+  }
+})();
+</script>
 </body>
 </html>
