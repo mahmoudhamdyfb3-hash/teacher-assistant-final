@@ -997,5 +997,63 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   }
 })();
 </script>
+<script id="sync-group-price-to-existing-students-v22">
+(function(){
+  'use strict';
+  function list(key){try{var value=JSON.parse(localStorage.getItem(key)||'');return Array.isArray(value)?value:[];}catch(e){return [];}}
+  function object(key){try{var value=JSON.parse(localStorage.getItem(key)||'');return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(e){return {};}}
+  function money(value){return Math.round(value*100)/100;}
+  function groupDialog(){return Array.from(document.querySelectorAll('.fixed')).find(function(node){var heading=node.querySelector('h3');return heading&&(/إضافة مجموعة جديدة|تعديل المجموعة/).test((heading.textContent||'').trim());});}
+  function savedGroupPrice(details){
+    var groups=list('mosaed_groups');
+    var found=false;
+    var updated=groups.map(function(group){
+      if(!group||String(group.name||'').trim()!==details.name)return group;
+      found=true;
+      return Object.assign({},group,{price:details.price,paymentType:details.mode,payLabel:details.mode==='session'?'الدفع بالحصة':'دفع شهري'});
+    });
+    if(found)localStorage.setItem('mosaed_groups',JSON.stringify(updated));
+    return found?updated.find(function(group){return group&&String(group.name||'').trim()===details.name;}):null;
+  }
+  function updateStudents(details,group){
+    var sessions=Math.max(1,Number(group&&group.sessions)||1);
+    var base=details.mode==='session'?details.price*sessions:details.price;
+    var discounts=object('student_discounts_v1');
+    var changed=false;
+    var updated=list('students').map(function(student){
+      if(!student||String(student.group||'').trim()!==details.name)return student;
+      var status=String(student.paidStatus||'').trim();
+      if(status==='exempt'||status==='معفى')return student;
+      var amount=base;
+      var discount=discounts[details.name+'|'+String(student.name||'').trim()];
+      if(discount&&typeof discount==='object'){
+        var value=Math.max(0,Number(discount.value)||0);
+        if(discount.type==='percent')amount=base*(1-Math.min(100,value)/100);
+        if(discount.type==='fixed')amount=Math.max(0,base-value);
+      }
+      amount=money(amount);
+      if(Number(student.amount)!==amount){changed=true;return Object.assign({},student,{amount:amount});}
+      return student;
+    });
+    if(changed)localStorage.setItem('students',JSON.stringify(updated));
+  }
+  function apply(details){var group=savedGroupPrice(details);if(group)updateStudents(details,group);}
+  document.addEventListener('click',function(event){
+    var button=event.target&&event.target.closest?event.target.closest('button'):null;
+    if(!button)return;
+    var label=(button.textContent||'').trim();
+    if(label!=='إضافة المجموعة'&&label!=='حفظ التعديلات ✅')return;
+    var dialog=groupDialog();
+    var name=dialog&&dialog.querySelector('input[placeholder*="الصف الثالث"]');
+    var price=dialog&&dialog.querySelector('#group-price-v12-input');
+    var mode=dialog&&dialog.querySelector('#group-payment-mode-v12');
+    var amount=Number(price&&price.value);
+    if(!name||!name.value.trim()||!Number.isFinite(amount)||amount<=0)return;
+    var details={name:name.value.trim(),price:money(amount),mode:mode&&mode.value==='session'?'session':'monthly'};
+    [60,220,600].forEach(function(wait){setTimeout(function(){apply(details);},wait);});
+    setTimeout(function(){location.reload();},850);
+  },true);
+})();
+</script>
 </body>
 </html>
