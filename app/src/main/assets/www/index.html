@@ -765,6 +765,12 @@ var tries=0,t=setInterval(function(){if(build()||++tries>50)clearInterval(t)},50
     keys.forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=label(k)+(k===ck?' - الحالي':'');o.selected=k===browse;sel.appendChild(o);});
     sel.onchange=function(){switchMonth(this.value)};
     top.appendChild(tx);top.appendChild(sel);box.appendChild(top);
+    var previousDate=new Date(Number(ck.slice(0,4)),Number(ck.slice(5,7))-2,1),previous=previousDate.getFullYear()+"-"+String(previousDate.getMonth()+1).padStart(2,"0");
+    var quick=document.createElement('div');quick.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px';
+    function quickButton(text,month,available){var button=document.createElement('button');button.type='button';button.textContent=text;button.disabled=!available;button.style.cssText='padding:10px;border-radius:11px;border:1px solid '+(month===browse?'#6366f1':(dark?'rgba(255,255,255,.12)':'#ddd'))+';background:'+(month===browse?'#4f46e5':(dark?'#2a2a35':'#f8fafc'))+';color:'+(month===browse?'#fff':(dark?'#fff':'#374151'))+';font-weight:800;font-size:12px;opacity:'+(available?'1':'.45');if(available&&month!==browse)button.onclick=function(){switchMonth(month)};return button;}
+    quick.appendChild(quickButton('الشهر الحالي • '+label(ck),ck,true));
+    quick.appendChild(quickButton('الشهر السابق • '+label(previous),previous,!!hist[previous]));
+    box.appendChild(quick);
     var note=document.createElement('div');note.style.cssText='font-size:10px;opacity:.5;margin-top:7px;line-height:1.7';note.textContent=browse===ck?'عند بداية شهر جديد تُحفظ بيانات الشهر السابق تلقائيًا ويبدأ الطلاب كغير مدفوعين.':'أنت تعرض بيانات شهر سابق. ارجع للشهر الحالي من القائمة للمتابعة.';box.appendChild(note);
     var parent=h.parentElement && h.parentElement.parentElement ? h.parentElement.parentElement : h.parentElement;
     if(parent) parent.insertBefore(box,parent.firstChild);
@@ -1053,6 +1059,40 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
     [60,220,600].forEach(function(wait){setTimeout(function(){apply(details);},wait);});
     setTimeout(function(){location.reload();},850);
   },true);
+})();
+</script>
+<style id="finance-groups-layout-v2">
+  .ta-finance-group-card{border-radius:16px!important;padding:14px!important;border-color:rgba(99,102,241,.22)!important}
+  .ta-finance-group-card .ta-finance-group-action{background:#4f46e5!important;border-radius:11px!important;padding-top:10px!important;padding-bottom:10px!important}
+  .ta-finance-payment-list{border-radius:16px!important;padding:13px!important}
+  .ta-finance-payment-list [class*="max-h-[360px]"]{max-height:250px!important}
+  .ta-finance-payment-list [class*="max-h-[360px]"]>div{padding:9px!important;border-radius:10px!important}
+</style>
+<script id="finance-groups-layout-v2-script">
+(function(){
+  'use strict';
+  function install(){
+    Array.from(document.querySelectorAll('button')).forEach(function(button){
+      if((button.textContent||'').trim()==='عرض التفاصيل'){
+        button.classList.add('ta-finance-group-action');
+        var card=button.closest('div[class*="rounded-[18px]"]');
+        if(card)card.classList.add('ta-finance-group-card');
+        button.textContent='الطلاب والتحصيل';
+      }
+    });
+    Array.from(document.querySelectorAll('h4')).forEach(function(heading){
+      var text=(heading.textContent||'').trim();
+      if(text.indexOf('دفعوا')!==-1||text.indexOf('لم يدفعوا')!==-1){
+        var card=heading.closest('div[class*="rounded-[18px]"]');
+        if(card)card.classList.add('ta-finance-payment-list');
+      }
+    });
+  }
+  var queued=false;
+  function schedule(){if(queued)return;queued=true;setTimeout(function(){queued=false;install();},40);}
+  document.addEventListener('click',schedule,true);
+  new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
+  setTimeout(install,350);
 })();
 </script>
 </body>
