@@ -1077,7 +1077,7 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
         button.classList.add('ta-finance-group-action');
         var card=button.closest('div[class*="rounded-[18px]"]');
         if(card)card.classList.add('ta-finance-group-card');
-        button.textContent='الطلاب والتحصيل';
+        button.textContent='الطلاب';
       }
     });
     Array.from(document.querySelectorAll('h4')).forEach(function(heading){
@@ -1093,6 +1093,41 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   document.addEventListener('click',schedule,true);
   new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
   setTimeout(install,350);
+})();
+</script>
+<style id="app-sections-hub-v1-style">
+  .ppv1-sub{display:none!important}
+  .ta-sections-hub{margin:16px 0;padding:15px;border:1px solid rgba(129,140,248,.25);border-radius:20px;background:linear-gradient(135deg,rgba(79,70,229,.16),rgba(30,41,59,.96));direction:rtl}
+  .ta-sections-hub-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.ta-sections-hub-title strong{font-size:16px}.ta-sections-hub-title span{font-size:11px;color:#c4b5fd}
+  .ta-sections-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.ta-sections-link{min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(165,180,252,.22);border-radius:14px;background:rgba(15,23,42,.76);color:#e0e7ff;padding:8px 4px;font:700 10px Tahoma,Arial,sans-serif}
+  .ta-sections-icon{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:rgba(99,102,241,.25)}.ta-sections-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ta-sections-link:nth-child(2n) .ta-sections-icon{background:rgba(16,185,129,.2)}.ta-sections-link:nth-child(3n) .ta-sections-icon{background:rgba(56,189,248,.2)}
+</style>
+<script id="app-sections-hub-v1-script">
+(function(){
+  'use strict';
+  var sections=[['groups','المجموعات','إدارة المجموعات الدراسية'],['students','الطلاب','إضافة الطلاب وبياناتهم'],['attendance','الحضور','تسجيل حضور الطلاب'],['calendar','الجدول','مواعيد الحصص'],['exam','امتحان','متابعة الامتحانات'],['finance','المالية','التحصيل والمصروفات'],['settings','الإعدادات','إعدادات التطبيق']];
+  function icon(name){var icons={groups:'<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',students:'<svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/></svg>',attendance:'<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>',calendar:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',exam:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>',finance:'<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h2"/></svg>',settings:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.1 2.1-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56v.09h-3v-.09A1.7 1.7 0 0 0 10.7 18.64a1.7 1.7 0 0 0-1.88.34l-.06.06-2.1-2.1.06-.06A1.7 1.7 0 0 0 7.06 15a1.7 1.7 0 0 0-1.56-1.03h-.09v-3h.09A1.7 1.7 0 0 0 7.06 9.94a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.1-2.1.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56v-.09h3v.09A1.7 1.7 0 0 0 15.76 6.3a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.1 2.1-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.09v3h-.09A1.7 1.7 0 0 0 19.4 15z"/></svg>'};return icons[name]||'';}
+  function clean(text){return String(text||'').replace(/\s+/g,' ').trim();}
+  function navigate(label){
+    var button=Array.from(document.querySelectorAll('button')).find(function(node){return clean(node.textContent)===label;});
+    if(button)button.click();
+  }
+  function install(){
+    var heading=Array.from(document.querySelectorAll('h3')).find(function(node){return clean(node.textContent).indexOf('مجموعات اليوم')===0;});
+    var previous=document.getElementById('app-sections-hub-v1');
+    if(!heading){if(previous)previous.remove();return;}
+    if(previous)return;
+    var daily=heading.closest('div[class*="space-y-3"]');
+    var parent=daily&&daily.parentElement;
+    if(!parent)return;
+    var hub=document.createElement('section');hub.id='app-sections-hub-v1';hub.className='ta-sections-hub';
+    var title=document.createElement('div');title.className='ta-sections-hub-title';title.innerHTML='<strong>أقسام التطبيق</strong>';hub.appendChild(title);
+    var grid=document.createElement('div');grid.className='ta-sections-grid';
+    sections.forEach(function(item){var button=document.createElement('button');button.type='button';button.className='ta-sections-link';button.title=item[2];button.innerHTML='<span class="ta-sections-icon">'+icon(item[0])+'</span><span>'+item[1]+'</span>';button.addEventListener('click',function(){navigate(item[1]);});grid.appendChild(button);});
+    hub.appendChild(grid);parent.insertBefore(hub,daily);
+  }
+  var waiting=false;function schedule(){if(waiting)return;waiting=true;setTimeout(function(){waiting=false;install();},40);}
+  document.addEventListener('click',schedule,true);new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});setTimeout(install,350);
 })();
 </script>
 </body>
