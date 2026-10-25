@@ -422,7 +422,7 @@ function Rc(){let[n,e]=w.useState(new Date);w.useEffect(()=>{let v=setInterval((
   function filterCards(){var map={};groups().forEach(function(group){if(group&&group.name)map[clean(group.name)]=clean(group.center)||'السنتر الرئيسي';});Array.from(document.querySelectorAll('.ta-finance-group-card')).forEach(function(card){var group=groups().find(function(item){return item&&item.name&&clean(card.textContent).indexOf(clean(item.name))!==-1;});card.style.display=selected==='الكل'||!group||map[clean(group.name)]===selected?'':'none';});}
   function install(){mountGroupCenter();mountExpenseCenter();renderFinance();}
   var queued=false;function schedule(){if(queued)return;queued=true;setTimeout(function(){queued=false;install();},80);}
-  document.addEventListener('click',function(event){if(event.target.closest&&event.target.closest('#ta-centers-finance-v1'))return;var button=event.target.closest&&event.target.closest('button');if(button){var label=clean(button.textContent);if(label==='إضافة المجموعة'||label==='حفظ التعديلات ✅')saveGroupCenter();if(label==='حفظ المصروف')saveExpenseCenter();}schedule();},true);document.addEventListener('change',function(event){if(!(event.target.closest&&event.target.closest('#ta-centers-finance-v1')))schedule();},true);new MutationObserver(function(records){var root=document.getElementById('ta-centers-finance-v1');if(records.some(function(record){return !root||!root.contains(record.target);})){schedule();}}).observe(document.documentElement,{childList:true,subtree:true});setTimeout(schedule,500);
+  document.addEventListener('click',function(event){if(event.target.closest&&event.target.closest('#ta-centers-finance-v1'))return;var button=event.target.closest&&event.target.closest('button');if(!button)return;var label=clean(button.textContent),needsUpdate=label==='المالية'||label==='إضافة المجموعة'||label==='حفظ التعديلات ✅'||label==='حفظ المصروف';if(label==='إضافة المجموعة'||label==='حفظ التعديلات ✅')saveGroupCenter();if(label==='حفظ المصروف')saveExpenseCenter();if(needsUpdate)schedule();},true);document.addEventListener('change',function(event){if(event.target.matches&&event.target.matches('[data-center-select],[data-expense-center]'))schedule();},true);setTimeout(schedule,500);
 })();
 </script>
 <script id="discount-finance-reconcile-v1">
@@ -443,7 +443,7 @@ function Rc(){let[n,e]=w.useState(new Date);w.useEffect(()=>{let v=setInterval((
       if(amount===null||Number(student.amount)===amount)return student;
       changed=true;return Object.assign({},student,{amount:amount});
     });
-    if(changed){try{localStorage.setItem('students',JSON.stringify(next));sessionStorage.setItem('ta_discount_finance_reconciled','1');setTimeout(function(){location.reload();},80);}catch(e){}}
+    if(changed){try{localStorage.setItem('students',JSON.stringify(next));sessionStorage.setItem('ta_discount_finance_reconciled','1');setTimeout(function(){},80);}catch(e){}}
   }
   var queued=false;function schedule(){if(queued)return;queued=true;setTimeout(function(){queued=false;reconcile();},180);}
   document.addEventListener('click',function(event){var button=event.target.closest&&event.target.closest('button');if(button&&(button.textContent||'').trim()==='حفظ')schedule();},true);
@@ -758,6 +758,7 @@ function build(){
     el('ta-v40-questions').appendChild(q);renumber();
   }
   function buildPreview(){
+    var logo='';try{logo=localStorage.getItem('ta_teacher_exam_logo_v1')||'';}catch(e){}
     var qs='';Array.prototype.forEach.call(sec.querySelectorAll('.ta-v40-question'),function(q,i){var type=q.dataset.type,editor=q.querySelector('.ta-v40-editor'),body=(editor&&editor.innerHTML)||'........................................',mark=(q.querySelector('.ta-v40-mark')||{}).value||'',extra='';
       if(type==='mcq'){var letters=['أ','ب','ج','د'],opts=q.querySelectorAll('.ta-v40-option input:not([type="file"])');extra='<div class="ta-v40-paper-options">'+Array.prototype.map.call(opts,function(x,j){return '<div>'+letters[j]+') '+esc(x.value)+'</div>'}).join('')+'</div>';}
       else if(type==='tf')extra='<div class="ta-v40-paper-options">الإجابة: ( صح / خطأ )</div>';
@@ -766,9 +767,17 @@ function build(){
       else extra='<div style="height:36px;border-bottom:1px dotted #999"></div>';
       qs+='<div class="ta-v40-paper-q"><div class="ta-v40-paper-qhead"><span>س'+(i+1)+') '+body+'</span><span>('+esc(mark)+' درجة)</span></div>'+extra+'</div>';
     });
-    el('ta-v40-paper').innerHTML='<div class="ta-v40-paper-head">'+(logo?'<img src="'+esc(logo)+'" alt="شعار المدرس" style="max-width:82px;max-height:82px;object-fit:contain;display:block;margin:0 auto 8px">':'')+(getVal('ta-v40-school')?'<div style="font-size:13px;font-weight:bold;margin-bottom:4px">'+esc(getVal('ta-v40-school'))+'</div>':'')+'<h1>'+esc(getVal('ta-v40-title')||'امتحان')+'</h1><div>'+esc(getVal('ta-v40-subject'))+(getVal('ta-v40-grade')?' — '+esc(getVal('ta-v40-grade')):'')+'</div><div class="ta-v40-paper-meta"><div>اسم الطالب: ................................</div><div>المدة: '+esc(getVal('ta-v40-duration'))+'</div><div>الدرجة: '+esc(getVal('ta-v40-total'))+'</div><div>المعلم: '+esc(getVal('ta-v40-teacher'))+'</div><div>التاريخ: '+esc(getVal('ta-v40-date'))+'</div><div>الفصل: ........................</div></div></div>'+(getVal('ta-v40-instructions')?'<div class="ta-v40-paper-inst"><b>تعليمات:</b> '+esc(getVal('ta-v40-instructions'))+'</div>':'')+(qs||'<div style="text-align:center;margin-top:45px">لم تتم إضافة أسئلة بعد.</div>');
+    el('ta-v40-paper').innerHTML='<div class="ta-v40-paper-head"><div class="ta-v40-paper-title-row"><div class="ta-v40-paper-logo-slot">'+(logo?'<img src="'+esc(logo)+'" alt="شعار المدرس">':'')+'</div><div class="ta-v40-paper-title-block">'+(getVal('ta-v40-school')?'<div class="ta-v40-paper-school">'+esc(getVal('ta-v40-school'))+'</div>':'')+'<h1>'+esc(getVal('ta-v40-title')||'امتحان')+'</h1><div>'+esc(getVal('ta-v40-subject'))+(getVal('ta-v40-grade')?' — '+esc(getVal('ta-v40-grade')):'')+'</div></div><div class="ta-v40-paper-logo-spacer"></div></div><div class="ta-v40-paper-meta"><div>اسم الطالب: ................................</div><div>المدة: '+esc(getVal('ta-v40-duration'))+'</div><div>الدرجة: '+esc(getVal('ta-v40-total'))+'</div><div>المعلم: '+esc(getVal('ta-v40-teacher'))+'</div><div>التاريخ: '+esc(getVal('ta-v40-date'))+'</div><div>الفصل: ........................</div></div></div>'+(getVal('ta-v40-instructions')?'<div class="ta-v40-paper-inst"><b>تعليمات:</b> '+esc(getVal('ta-v40-instructions'))+'</div>':'')+(qs||'<div style="text-align:center;margin-top:45px">لم تتم إضافة أسئلة بعد.</div>');
   }
-  function savePdf(){buildPreview();try{if(window.AndroidExamPrinter&&typeof AndroidExamPrinter.printExam==='function'){AndroidExamPrinter.printExam();return;}}catch(e){}window.print();}
+  function savePdf(){
+  buildPreview();
+  var area=el('ta-v40-print-area'),paper=el('ta-v40-paper');
+  if(!area||!paper||!paper.innerHTML.trim()){alert('أضف بيانات أو سؤالاً أولاً ثم حاول الحفظ.');return;}
+  area.style.display='block';
+  var restore=function(){area.style.display='';};
+  window.addEventListener('afterprint',restore,{once:true});
+  requestAnimationFrame(function(){requestAnimationFrame(function(){window.print();});});
+}
   sec.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.cmd){document.execCommand(b.dataset.cmd,false,null);return;}if(b.dataset.add){addQuestion(b.dataset.add);return;}if(b.dataset.remove){var q=b.closest('.ta-v40-question');if(q)q.remove();renumber();return;}if(b.dataset.move){var q=b.closest('.ta-v40-question'),d=Number(b.dataset.move);if(!q)return;if(d<0&&q.previousElementSibling)q.parentNode.insertBefore(q,q.previousElementSibling);if(d>0&&q.nextElementSibling)q.parentNode.insertBefore(q.nextElementSibling,q);renumber();return;}});
   el('ta-v40-preview').onclick=function(){buildPreview();el('ta-v40-preview-paper').innerHTML=el('ta-v40-paper').innerHTML;preview.classList.add('show');};
   el('ta-v40-savepdf').onclick=savePdf;
@@ -802,7 +811,7 @@ var tries=0,t=setInterval(function(){if(build()||++tries>50)clearInterval(t)},50
       localStorage.setItem('finance_months_v2',JSON.stringify(h));
       localStorage.setItem('students',JSON.stringify(h[k]));
       if(k===ck)localStorage.removeItem('finance_browse_month_v2');else localStorage.setItem('finance_browse_month_v2',k);
-      location.reload();
+      return;
     }catch(e){console.error(e);}
   }
   function build(){
@@ -1071,7 +1080,7 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   });
   if(changed){
     localStorage.setItem('students',JSON.stringify(updated));
-    setTimeout(function(){location.reload();},0);
+    setTimeout(function(){},0);
   }
 })();
 </script>
@@ -1129,7 +1138,7 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
     if(!name||!name.value.trim()||!Number.isFinite(amount)||amount<=0)return;
     var details={name:name.value.trim(),price:money(amount),mode:mode&&mode.value==='session'?'session':'monthly'};
     [60,220,600].forEach(function(wait){setTimeout(function(){apply(details);},wait);});
-    setTimeout(function(){location.reload();},850);
+    setTimeout(function(){} ,850);
   },true);
 })();
 </script>
@@ -1353,7 +1362,7 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   function save(){var box=dialog(),name=box&&box.querySelector('input[placeholder*="الصف الثالث"]'),select=box&&box.querySelector('[data-group-currency]');if(!name||!select||!clean(name.value))return;var groupName=clean(name.value),currency=symbols[select.value]?select.value:'EGP';[100,350,750].forEach(function(ms){setTimeout(function(){var changed=false,list=groups().map(function(g){if(g&&clean(g.name)===groupName&&g.currency!==currency){changed=true;return Object.assign({},g,{currency:currency});}return g;});if(changed){try{localStorage.setItem(key,JSON.stringify(list));}catch(e){}}},ms);});}
   function decorate(){var list=groups();if(!list.length)return;Array.from(document.querySelectorAll('.ta-finance-group-card,div[class*="rounded-[18px]"]')).forEach(function(card){var group=list.find(function(g){return g&&g.name&&clean(card.textContent).indexOf(clean(g.name))!==-1;});if(!group)return;var symbol=symbols[group.currency||'EGP']||symbols.EGP;var walker=document.createTreeWalker(card,NodeFilter.SHOW_TEXT),nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);nodes.forEach(function(node){if(node.parentElement&&node.parentElement.closest('.ta-currency-field'))return;var value=node.nodeValue,replaced=value&&value.indexOf('ج.م')!==-1?value.replace(/ج\.م/g,symbol):value;if(replaced!==value)node.nodeValue=replaced;});});}
   function install(){mount();decorate();}
-  var queued=false;function schedule(){if(queued)return;queued=true;setTimeout(function(){queued=false;install();},100);}document.addEventListener('click',function(event){var button=event.target.closest&&event.target.closest('button');if(button){var label=clean(button.textContent);if(label==='إضافة المجموعة'||label==='حفظ التعديلات ✅')save();}schedule();},true);new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});setTimeout(schedule,600);
+  var queued=false;function schedule(){if(queued)return;queued=true;setTimeout(function(){queued=false;install();},100);}document.addEventListener('click',function(event){var button=event.target.closest&&event.target.closest('button');if(button){var label=clean(button.textContent);if(label==='إضافة المجموعة'||label==='حفظ التعديلات ✅')save();}setTimeout(mount,50);},true);setTimeout(install,600);
 })();
 </script><style id="centers-finance-menu-v2-style">
 .ta-centers-finance select[data-center-filter]{display:none!important}.ta-center-menu-wrap{position:relative;margin-bottom:10px}.ta-center-menu-button{width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(129,140,248,.42);border-radius:11px;background:#202d45;color:#fff;padding:11px 12px;font:700 13px Tahoma,Arial,sans-serif}.ta-center-menu-list{display:none;position:absolute;z-index:500;right:0;left:0;top:calc(100% + 5px);padding:6px;border:1px solid rgba(129,140,248,.38);border-radius:11px;background:#182237;box-shadow:0 12px 28px rgba(0,0,0,.35)}.ta-center-menu-list.open{display:block}.ta-center-menu-item{display:block;width:100%;text-align:right;border:0;border-radius:8px;background:transparent;color:#fff;padding:10px;font:700 12px Tahoma,Arial,sans-serif}.ta-center-menu-item:active,.ta-center-menu-item.active{background:rgba(99,102,241,.32)}
@@ -1374,8 +1383,35 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   function groups(){try{var v=JSON.parse(localStorage.getItem('mosaed_groups')||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
   function install(){var root=document.getElementById('ta-centers-finance-v1');if(!root)return;var select=root.querySelector('select[data-center-filter]');if(!select)return;select.style.setProperty('display','none','important');root.querySelectorAll('.ta-center-menu-wrap').forEach(function(node){node.remove();});var old=root.querySelector('.ta-center-button-bar');if(old)return;var bar=document.createElement('div'),list=groups();bar.className='ta-center-button-bar';function apply(value){try{sessionStorage.setItem('ta_centers_finance_button_selection',value);}catch(e){}Array.from(document.querySelectorAll('.ta-finance-group-card')).forEach(function(card){var group=list.find(function(item){return item&&item.name&&clean(card.textContent).indexOf(clean(item.name))!==-1;}),center=clean(group&&group.center)||'السنتر الرئيسي';card.classList.toggle('ta-center-cascade-hidden',!!value&&center!==value);});Array.from(root.querySelectorAll('.ta-center-summary')).forEach(function(card){var title=clean(card.querySelector('strong')&&card.querySelector('strong').textContent);card.classList.toggle('ta-center-cascade-hidden',!!value&&title!==value);});Array.from(bar.querySelectorAll('button')).forEach(function(button){button.classList.toggle('active',button.dataset.center===value);});}
   Array.from(select.options).forEach(function(option){var button=document.createElement('button');button.type='button';button.className='ta-center-button'+(option.selected?' active':'');button.dataset.center=option.value;button.textContent=option.textContent;button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();apply(option.value);});bar.appendChild(button);});select.insertAdjacentElement('beforebegin',bar);var saved='';try{saved=sessionStorage.getItem('ta_centers_finance_button_selection')||'';}catch(e){}apply(Array.from(select.options).some(function(option){return option.value===saved;})?saved:select.options[select.selectedIndex].value);}
-  var timer;function schedule(){clearTimeout(timer);timer=setTimeout(install,80);}new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});setTimeout(install,700);
+  var timer;function schedule(){clearTimeout(timer);timer=setTimeout(install,80);}document.addEventListener('click',schedule,true);setTimeout(install,700);
 })();
-</script></body>
+</script><script id="finance-group-selection-fix-v4">
+(function(){
+  'use strict';
+  function clean(v){return String(v||'').replace(/\s+/g,' ').trim();}
+  function apply(select){var wanted=clean(select&&select.value);if(!wanted)return;setTimeout(function(){Array.from(document.querySelectorAll('.ta-finance-group-card')).forEach(function(card){var matches=clean(card.textContent).indexOf(wanted)!==-1;if(matches){card.classList.remove('ta-center-cascade-hidden');card.style.setProperty('display','block','important');}else{card.classList.add('ta-center-cascade-hidden');card.style.setProperty('display','none','important');}});},50);}
+  document.addEventListener('change',function(event){var select=event.target;if(select&&select.matches&&select.matches('#ta-finance-group-picker-wrap select'))apply(select);},true);
+})();
+</script><script id="exam-actions-fix-v1">
+(function(){
+  'use strict';
+  document.addEventListener('click',function(event){var button=event.target.closest&&event.target.closest('#ta-v40-preview,#ta-v40-savepdf');if(!button)return;event.preventDefault();event.stopImmediatePropagation();try{if(typeof button.onclick==='function'){button.onclick.call(button,event);return;}}catch(e){}if(button.id==='ta-v40-preview'){var overlay=document.getElementById('ta-v40-preview-overlay'),paper=document.getElementById('ta-v40-preview-paper'),source=document.getElementById('ta-v40-paper');if(paper&&source)paper.innerHTML=source.innerHTML;if(overlay)overlay.classList.add('show');}else{try{window.print();}catch(e){}}
+  },true);
+})();
+</script><style id="exam-print-fix-v2-style">
+@media print{
+  html,body{background:#fff!important;}
+  body>*{display:none!important;visibility:hidden!important;}
+  #ta-v40-print-area{display:block!important;visibility:visible!important;position:absolute!important;inset:0!important;width:100%!important;min-height:100%!important;background:#fff!important;}
+  #ta-v40-print-area,#ta-v40-print-area *{visibility:visible!important;}
+  #ta-v40-paper{display:block!important;width:100%!important;min-height:297mm!important;background:#fff!important;color:#000!important;}
+}
+</style><style id="exam-logo-layout-v1">
+.ta-v40-paper-title-row{display:grid;grid-template-columns:88px 1fr 88px;align-items:center;gap:8px;text-align:center;min-height:82px}
+.ta-v40-paper-logo-slot{width:82px;height:82px;display:flex;align-items:center;justify-content:center;justify-self:start}
+.ta-v40-paper-logo-slot img{max-width:82px;max-height:82px;object-fit:contain;display:block}
+.ta-v40-paper-school{font-size:13px;font-weight:bold;margin-bottom:4px}
+@media print{.ta-v40-paper-title-row{grid-template-columns:88px 1fr 88px!important}.ta-v40-paper-logo-slot{width:82px!important;height:82px!important}.ta-v40-paper-logo-slot img{max-width:82px!important;max-height:82px!important}}
+</style></body>
 </html>
 
