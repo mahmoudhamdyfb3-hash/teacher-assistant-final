@@ -1006,16 +1006,22 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
     var amount=Number(price&&price.value);
     return name&&name.value.trim()&&Number.isFinite(amount)&&amount>0?{name:name.value.trim(),price:Math.round(amount*100)/100,paymentType:mode&&mode.value==='session'?'session':'monthly'}:null;
   }
+  function selectedGroupMeta(){
+    var dialog=Array.from(document.querySelectorAll('.fixed')).find(function(node){var title=node.querySelector('h3');return title&&(/إضافة مجموعة جديدة|تعديل المجموعة/).test((title.textContent||'').trim());});
+    if(!dialog)return null;
+    var name=dialog.querySelector('input[placeholder*="الصف الثالث"]'),center=dialog.querySelector('[data-center-select]'),currency=dialog.querySelector('[data-group-currency]');
+    return name&&name.value.trim()?{name:name.value.trim(),center:String(center&&center.value||''),currency:String(currency&&currency.value||'')}:null;
+  }
   Storage.prototype.setItem=function(storageKey,value){
     if(storageKey!==key)return nativeSet.call(this,storageKey,value);
     try{
-      var previous=read(this.getItem(key)), incoming=read(value), current=selectedPrice();
+      var previous=read(this.getItem(key)), incoming=read(value), current=selectedPrice(), meta=selectedGroupMeta();
       var preserved={};
-      previous.forEach(function(group){if(group&&group.name&&Number(group.price)>0)preserved[group.id||group.name]=group;});
+      previous.forEach(function(group){if(group&&group.name)preserved[group.id||group.name]=group;});
       incoming=incoming.map(function(group){
         if(!group||!group.name)return group;
-        var old=preserved[group.id||group.name], chosen=current&&current.name===group.name?current:null, price=chosen?chosen.price:(Number(group.price)>0?Number(group.price):(old&&Number(old.price)>0?Number(old.price):0)), paymentType=chosen?chosen.paymentType:(group.paymentType||(old&&old.paymentType)||'monthly');
-        return price>0?Object.assign({},group,{price:price,paymentType:paymentType,payLabel:paymentType==='session'?'الدفع بالحصة':'دفع شهري'}):group;
+        var old=preserved[group.id||group.name], chosen=current&&current.name===group.name?current:null, chosenMeta=meta&&meta.name===group.name?meta:null, price=chosen?chosen.price:(Number(group.price)>0?Number(group.price):(old&&Number(old.price)>0?Number(old.price):0)), paymentType=chosen?chosen.paymentType:(group.paymentType||(old&&old.paymentType)||'monthly'), center=chosenMeta&&chosenMeta.center&&chosenMeta.center!=='__new'?chosenMeta.center:(group.center||(old&&old.center)||'السنتر الرئيسي'), currency=chosenMeta&&/^(EGP|SAR|AED|KWD|OMR)$/.test(chosenMeta.currency)?chosenMeta.currency:(group.currency||(old&&old.currency)||'EGP'), next=Object.assign({},group,{center:center,currency:currency});
+        return price>0?Object.assign(next,{price:price,paymentType:paymentType,payLabel:paymentType==='session'?'الدفع بالحصة':'دفع شهري'}):next;
       });
       value=JSON.stringify(incoming);
     }catch(e){}
