@@ -97,7 +97,6 @@ service cloud.firestore {
     match /workspaces/{workspaceId}/sharedState/{stateKey} {
       allow read, write: if signedIn() && workspaceMember(workspaceId);
     }
-
     // No other client-side documents are public.
     match /{document=**} {
       allow read, write: if false;

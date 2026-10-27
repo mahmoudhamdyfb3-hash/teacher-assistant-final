@@ -1541,6 +1541,60 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   document.addEventListener('change',function(event){if(event.target&&event.target.matches&&event.target.matches('[data-group-currency]'))save();},true);
   document.addEventListener('click',function(event){var button=event.target.closest&&event.target.closest('button');if(button&&(/إضافة المجموعة|حفظ التعديلات/).test(clean(button.textContent)))[0,120,500].forEach(function(delay){setTimeout(save,delay);});},true);
 })();
+</script><script id="group-center-lock-v3">
+(function(){
+  'use strict';
+  var groupKey='mosaed_groups', mapKey='ta_group_centers_v3';
+  function clean(value){return String(value||'').replace(/\s+/g,' ').trim();}
+  function id(group){return clean(group&&((group.id!==undefined&&group.id!==null&&group.id!=='')?group.id:group.name));}
+  function readGroups(text){try{var value=JSON.parse(text===undefined?localStorage.getItem(groupKey)||'[]':text);return Array.isArray(value)?value:[];}catch(error){return [];}}
+  function readMap(){try{var value=JSON.parse(localStorage.getItem(mapKey)||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(error){return {};}}
+  function writeMap(map){try{localStorage.setItem(mapKey,JSON.stringify(map));}catch(error){}}
+  function centerOf(group,map){var key=id(group),saved=clean(map&&map[key]);return saved||clean(group&&group.center)||'السنتر الرئيسي';}
+  function remember(group,center){var key=id(group),value=clean(center);if(!key||!value||value==='__new')return;var map=readMap();if(map[key]===value)return;map[key]=value;writeMap(map);}
+  function migrate(){var map=readMap(),changed=false;readGroups().forEach(function(group){var key=id(group),value=clean(group&&group.center);if(key&&value&&!map[key]){map[key]=value;changed=true;}});if(changed)writeMap(map);}
+  function groupDialog(){return Array.from(document.querySelectorAll('.fixed')).find(function(node){var heading=node.querySelector('h3');return heading&&(/إضافة مجموعة جديدة|تعديل المجموعة/).test(clean(heading.textContent));});}
+  function dialogValues(){var box=groupDialog(),name=box&&box.querySelector('input[placeholder*="الصف الثالث"]'),select=box&&box.querySelector('[data-center-select]');if(!box||!name||!select)return null;return {box:box,name:clean(name.value),center:clean(select.value)};}
+  function capture(){var value=dialogValues();if(!value||!value.name||!value.center||value.center==='__new')return;var oldKey=value.box.dataset.taCenterOriginalKey||value.name;remember({id:oldKey},value.center);remember({name:value.name},value.center);value.box.dataset.taCenterOriginalKey=id({name:value.name});}
+  function restore(){var value=dialogValues();if(!value||!value.name||!value.center)return;var group=readGroups().find(function(item){return item&&clean(item.name)===value.name;}),center=centerOf(group||{name:value.name},readMap());var select=value.box.querySelector('[data-center-select]');if(center&&Array.from(select.options).some(function(option){return option.value===center;}))select.value=center;value.box.dataset.taCenterOriginalKey=id(group||{name:value.name});}
+  var previousSet=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(key,value){
+    if(key===groupKey){
+      try{
+        var before=readGroups(),map=readMap(),oldByKey={};
+        before.forEach(function(group){var key=id(group);if(key)oldByKey[key]=group;});
+        var incoming=readGroups(value).map(function(group){
+          if(!group)return group;
+          var key=id(group),old=oldByKey[key],center=centerOf(group,map);
+          if(!map[key]&&old)center=centerOf(old,map);
+          if(key&&center){map[key]=center;return Object.assign({},group,{center:center});}
+          return group;
+        });
+        writeMap(map);
+        value=JSON.stringify(incoming);
+      }catch(error){}
+    }
+    return previousSet.call(this,key,value);
+  };
+  document.addEventListener('click',function(event){
+    var button=event.target.closest&&event.target.closest('button');if(!button)return;
+    var label=clean(button.textContent);
+    if(label==='إضافة مجموعة جديدة'||label==='تعديل المجموعة'||label==='تعديل'){
+      [80,260,650].forEach(function(delay){setTimeout(restore,delay);});
+      return;
+    }
+    if(label==='إضافة المجموعة'||label==='حفظ التعديلات ✅'){
+      capture();
+      [100,350,800,1600,3000].forEach(function(delay){setTimeout(capture,delay);});
+    }
+  },true);
+  document.addEventListener('change',function(event){
+    var select=event.target;
+    if(select&&select.matches&&select.matches('[data-center-select]'))capture();
+  },true);
+  migrate();
+  setTimeout(restore,650);
+})();
 </script></body>
 </html>
 

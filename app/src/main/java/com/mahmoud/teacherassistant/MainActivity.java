@@ -553,22 +553,24 @@ public class MainActivity extends Activity {
     private class AndroidFirebaseAuth {
         @JavascriptInterface
         public void signIn(String email, String password) {
-            FirebaseAuth.getInstance()
-                    .signInWithEmailAndPassword(email == null ? "" : email.trim(), password == null ? "" : password)
-                    .addOnCompleteListener(task -> sendFirebaseAuthResult(
-                            task.isSuccessful(),
-                            task.isSuccessful() ? "" : firebaseError(task.getException())
-                    ));
+            FirebaseAuth.getInstance().signInWithEmailAndPassword(
+                    email == null ? "" : email.trim(),
+                    password == null ? "" : password
+            ).addOnCompleteListener(task -> sendFirebaseAuthResult(
+                    task.isSuccessful(),
+                    task.isSuccessful() ? "" : firebaseError(task.getException())
+            ));
         }
 
         @JavascriptInterface
         public void createAccount(String email, String password) {
-            FirebaseAuth.getInstance()
-                    .createUserWithEmailAndPassword(email == null ? "" : email.trim(), password == null ? "" : password)
-                    .addOnCompleteListener(task -> sendFirebaseAuthResult(
-                            task.isSuccessful(),
-                            task.isSuccessful() ? "" : firebaseError(task.getException())
-                    ));
+            FirebaseAuth.getInstance().createUserWithEmailAndPassword(
+                    email == null ? "" : email.trim(),
+                    password == null ? "" : password
+            ).addOnCompleteListener(task -> sendFirebaseAuthResult(
+                    task.isSuccessful(),
+                    task.isSuccessful() ? "" : firebaseError(task.getException())
+            ));
         }
     }
 
@@ -587,8 +589,8 @@ public class MainActivity extends Activity {
                 + "}}));";
         webView.evaluateJavascript(js, null);
     }
-
     private class AndroidFirebaseData {
+
         @JavascriptInterface
         public void syncWorkspaceState(String workspaceId, String key, String value) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
