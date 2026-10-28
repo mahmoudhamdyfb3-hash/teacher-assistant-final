@@ -217,7 +217,14 @@ html.dark .ta-v40-btn,body.dark .ta-v40-btn,html.dark .ta-v40-tool,body.dark .ta
       localStorage.setItem("finance_months_v2",JSON.stringify(hist));
     }else if(active!==ck){
       hist[active]=snap(students);
-      var fresh=snap(students).map(function(x){x.paidStatus="unpaid"; delete x.lastPaymentDate; return x;});
+      var planned=Array.isArray(hist[ck])?hist[ck]:[],plannedById={};
+      planned.forEach(function(item){if(item&&item.id!==undefined)plannedById[String(item.id)]=item;});
+      var fresh=snap(students).map(function(x){
+        var early=plannedById[String(x.id)],next=Object.assign({},x,{paidStatus:"unpaid"});
+        delete next.lastPaymentDate;
+        if(early&&early.paidStatus){next.paidStatus=early.paidStatus;if(early.lastPaymentDate)next.lastPaymentDate=early.lastPaymentDate;}
+        return next;
+      });
       hist[ck]=snap(fresh);
       localStorage.setItem("students",JSON.stringify(fresh));
       localStorage.setItem("finance_active_month_v2",ck);
@@ -613,7 +620,7 @@ function build(){
   var buttons=nav.querySelectorAll('button');
   var financeBtn=null;
   buttons.forEach(function(b){if((b.textContent||'').indexOf('المالية')!==-1)financeBtn=b;});
-  var scheduleBtn=document.createElement('button');scheduleBtn.type='button';scheduleBtn.className=financeBtn?financeBtn.className:'flex-1 min-w-[70px] py-2.5 flex flex-col items-center gap-1 text-[11px] font-bold text-gray-400';scheduleBtn.innerHTML='<span class="ta-v23-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M8 18h2M14 14h2M14 18h2"/></svg></span><span>الجدول</span>';scheduleBtn.setAttribute('aria-label','الجدول الأسبوعي');
+  var scheduleBtn=document.createElement('button');scheduleBtn.type='button';scheduleBtn.className=financeBtn?financeBtn.className:'flex-1 min-w-[70px] py-2.5 flex flex-col items-center gap-1 text-[11px] font-bold text-gray-400';scheduleBtn.classList.remove('text-[#6366f1]');scheduleBtn.classList.add('text-gray-400');scheduleBtn.innerHTML='<span class="ta-v23-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M8 18h2M14 14h2M14 18h2"/></svg></span><span>الجدول</span>';scheduleBtn.setAttribute('aria-label','الجدول الأسبوعي');
   scheduleBtn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();buttons.forEach(function(b){b.classList.remove('text-[#6366f1]');b.classList.add('text-gray-400')});scheduleBtn.classList.remove('text-gray-400');scheduleBtn.classList.add('text-[#6366f1]');show()});
   if(financeBtn)nav.querySelector('div').insertBefore(scheduleBtn,financeBtn);else nav.querySelector('div').appendChild(scheduleBtn);
   buttons.forEach(function(b){b.addEventListener('click',function(){hide();scheduleBtn.classList.remove('text-[#6366f1]');scheduleBtn.classList.add('text-gray-400')})});
@@ -789,7 +796,7 @@ function build(){
   function show(){hideOtherCustom();sec.style.display='block';Array.prototype.forEach.call(host.children,function(ch){if(ch!==nav&&ch!==sec)ch.style.display='none'});window.scrollTo({top:0,behavior:'smooth'});}
   function hide(){sec.style.display='none';Array.prototype.forEach.call(host.children,function(ch){if(ch!==nav&&ch!==sec&&ch.id!=='ta-v21-section')ch.style.display=''})}
   var buttons=nav.querySelectorAll('button'),financeBtn=null,scheduleBtn=null;buttons.forEach(function(b){var t=(b.textContent||'');if(t.indexOf('المالية')!==-1)financeBtn=b;if(t.indexOf('الجدول')!==-1)scheduleBtn=b;});
-  var examBtn=document.createElement('button');examBtn.type='button';examBtn.className=(financeBtn||scheduleBtn)?(financeBtn||scheduleBtn).className:'flex-1 min-w-[70px] py-2.5 flex flex-col items-center gap-1 text-[11px] font-bold text-gray-400';examBtn.innerHTML='<span class="ta-v40-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg></span><span>امتحان</span>';examBtn.setAttribute('aria-label','منشئ الامتحانات');
+  var examBtn=document.createElement('button');examBtn.type='button';examBtn.className=(financeBtn||scheduleBtn)?(financeBtn||scheduleBtn).className:'flex-1 min-w-[70px] py-2.5 flex flex-col items-center gap-1 text-[11px] font-bold text-gray-400';examBtn.classList.remove('text-[#6366f1]');examBtn.classList.add('text-gray-400');examBtn.innerHTML='<span class="ta-v40-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg></span><span>امتحان</span>';examBtn.setAttribute('aria-label','منشئ الامتحانات');
   examBtn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();nav.querySelectorAll('button').forEach(function(b){b.classList.remove('text-[#6366f1]');b.classList.add('text-gray-400')});examBtn.classList.remove('text-gray-400');examBtn.classList.add('text-[#6366f1]');show();});
   var row=nav.querySelector('div');if(row){if(scheduleBtn)row.insertBefore(examBtn,scheduleBtn);else if(financeBtn)row.insertBefore(examBtn,financeBtn);else row.appendChild(examBtn);}
   nav.querySelectorAll('button').forEach(function(b){if(b===examBtn)return;b.addEventListener('click',function(){hide();examBtn.classList.remove('text-[#6366f1]');examBtn.classList.add('text-gray-400')})});
@@ -798,21 +805,39 @@ function build(){
 var tries=0,t=setInterval(function(){if(build()||++tries>50)clearInterval(t)},500);
 })();
 </script>
-<script id="monthly-finance-ui">
+<script id="finance-return-after-month-switch-v1">
+(function(){
+  try{if(sessionStorage.getItem('finance_return_after_month_switch_v1')!=='1')return;sessionStorage.removeItem('finance_return_after_month_switch_v1');}catch(e){return;}
+  function openFinance(){
+    var button=[].slice.call(document.querySelectorAll('button')).find(function(node){return (node.textContent||'').trim()==='المالية';});
+    if(!button)return false;
+    button.click();
+    return true;
+  }
+  var attempts=0,timer=setInterval(function(){if(openFinance()||++attempts>30)clearInterval(timer);},100);
+})();
+</script><script id="monthly-finance-ui">
 (function(){
   function keyNow(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
   function label(k){try{var a=k.split('-'); return new Date(Number(a[0]),Number(a[1])-1,1).toLocaleDateString('ar-EG',{month:'long',year:'numeric'});}catch(e){return k;}}
   function getHist(){try{var h=JSON.parse(localStorage.getItem('finance_months_v2')||'{}');return h&&typeof h==='object'?h:{};}catch(e){return {};}}
   function currentStudents(){try{var a=JSON.parse(localStorage.getItem('students')||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+  function futureSnapshot(base){return (Array.isArray(base)?base:[]).map(function(item){var copy=Object.assign({},item,{paidStatus:'unpaid'});delete copy.lastPaymentDate;return copy;});}
   function saveCurrent(){var ck=keyNow(),h=getHist(),browse=localStorage.getItem('finance_browse_month_v2'); if(!browse||browse===ck){h[ck]=currentStudents();localStorage.setItem('finance_months_v2',JSON.stringify(h));}}
   function switchMonth(k){
     try{
       var ck=keyNow(),h=getHist(),browse=localStorage.getItem('finance_browse_month_v2');
       if(!browse||browse===ck) h[ck]=currentStudents();
-      if(!h[k]) return;
+      if(!h[k]){
+        if(k>ck) h[k]=futureSnapshot(h[ck]||currentStudents());
+        else return;
+      }
       localStorage.setItem('finance_months_v2',JSON.stringify(h));
-      localStorage.setItem('students',JSON.stringify(h[k]));
       if(k===ck)localStorage.removeItem('finance_browse_month_v2');else localStorage.setItem('finance_browse_month_v2',k);
+      localStorage.setItem('students',JSON.stringify(h[k]));
+      // The React screen reads this state only on startup; return to Finance after its required refresh.
+      try{sessionStorage.setItem('finance_return_after_month_switch_v1','1');}catch(ignore){} 
+      setTimeout(function(){location.reload();},0);
       return;
     }catch(e){console.error(e);}
   }
@@ -823,7 +848,8 @@ var tries=0,t=setInterval(function(){if(build()||++tries>50)clearInterval(t)},50
     if(document.getElementById('finance-month-switcher-v2'))return;
     saveCurrent();
     var ck=keyNow(),hist=getHist(),browse=localStorage.getItem('finance_browse_month_v2')||ck;
-    var keys=Array.from(new Set([ck].concat(Object.keys(hist)))).sort().reverse();
+    var nextDate=new Date(Number(ck.slice(0,4)),Number(ck.slice(5,7)),1),next=nextDate.getFullYear()+"-"+String(nextDate.getMonth()+1).padStart(2,"0");
+    var keys=Array.from(new Set([next,ck].concat(Object.keys(hist)))).sort().reverse();
     var dark=document.documentElement.classList.contains('dark') || document.documentElement.getAttribute('data-theme')==='dark';
     var box=document.createElement('div');box.id='finance-month-switcher-v2';
     box.style.cssText='margin:0 0 14px 0;padding:12px 14px;border-radius:16px;border:1px solid '+(dark?'rgba(255,255,255,.10)':'#e5e7eb')+';background:'+(dark?'#1e1e28':'#fff')+';direction:rtl;';
@@ -834,12 +860,13 @@ var tries=0,t=setInterval(function(){if(build()||++tries>50)clearInterval(t)},50
     sel.onchange=function(){switchMonth(this.value)};
     top.appendChild(tx);top.appendChild(sel);box.appendChild(top);
     var previousDate=new Date(Number(ck.slice(0,4)),Number(ck.slice(5,7))-2,1),previous=previousDate.getFullYear()+"-"+String(previousDate.getMonth()+1).padStart(2,"0");
-    var quick=document.createElement('div');quick.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px';
+    var quick=document.createElement('div');quick.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px';
     function quickButton(text,month,available){var button=document.createElement('button');button.type='button';button.textContent=text;button.disabled=!available;button.style.cssText='padding:10px;border-radius:11px;border:1px solid '+(month===browse?'#6366f1':(dark?'rgba(255,255,255,.12)':'#ddd'))+';background:'+(month===browse?'#4f46e5':(dark?'#2a2a35':'#f8fafc'))+';color:'+(month===browse?'#fff':(dark?'#fff':'#374151'))+';font-weight:800;font-size:12px;opacity:'+(available?'1':'.45');if(available&&month!==browse)button.onclick=function(){switchMonth(month)};return button;}
+    quick.appendChild(quickButton('الشهر القادم • '+label(next),next,true));
     quick.appendChild(quickButton('الشهر الحالي • '+label(ck),ck,true));
     quick.appendChild(quickButton('الشهر السابق • '+label(previous),previous,!!hist[previous]));
     box.appendChild(quick);
-    var note=document.createElement('div');note.style.cssText='font-size:10px;opacity:.5;margin-top:7px;line-height:1.7';note.textContent=browse===ck?'عند بداية شهر جديد تُحفظ بيانات الشهر السابق تلقائيًا ويبدأ الطلاب كغير مدفوعين.':'أنت تعرض بيانات شهر سابق. ارجع للشهر الحالي من القائمة للمتابعة.';box.appendChild(note);
+    var note=document.createElement('div');note.style.cssText='font-size:10px;opacity:.5;margin-top:7px;line-height:1.7';note.textContent=browse===next?'أنت تعرض الشهر القادم. سجّل المدفوعات مقدمًا هنا، وستظهر تلقائيًا عند بداية الشهر.':browse===ck?'هذا هو الشهر الحالي.':'أنت تعرض أرشيف هذا الشهر. يمكنك تسجيل وتعديل المدفوعات هنا بأمان.';box.appendChild(note);
     var parent=h.parentElement && h.parentElement.parentElement ? h.parentElement.parentElement : h.parentElement;
     if(parent) parent.insertBefore(box,parent.firstChild);
   }
@@ -1594,6 +1621,53 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
   },true);
   migrate();
   setTimeout(restore,650);
+})();
+</script><style id="advance-payment-v1-style">
+.ta-advance-payment-launch{margin-top:10px;width:100%;padding:11px 12px;border:1px solid rgba(16,185,129,.42);border-radius:12px;background:rgba(6,78,59,.28);color:#d1fae5;font:700 12px Tahoma,Arial,sans-serif;direction:rtl}.ta-advance-payment-launch b{color:#6ee7b7}.ta-advance-payment-modal{position:fixed;z-index:2147483500;inset:0;padding:15px;background:rgba(3,7,18,.72);display:flex;align-items:center;justify-content:center;direction:rtl;font-family:Tahoma,Arial,sans-serif}.ta-advance-payment-box{width:min(100%,430px);padding:20px;border:1px solid rgba(129,140,248,.4);border-radius:21px;background:#182237;color:#fff;box-shadow:0 22px 60px rgba(0,0,0,.45)}.ta-advance-payment-box h3{margin:0;font-size:17px}.ta-advance-payment-box p{margin:7px 0 15px;font-size:11px;line-height:1.65;color:#cbd5e1}.ta-advance-payment-box label{display:block;margin:11px 0 5px;font-size:11px;font-weight:bold}.ta-advance-payment-box select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #5369b8;border-radius:11px;background:#202d45;color:#fff;font:700 12px Tahoma,Arial,sans-serif}.ta-advance-payment-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}.ta-advance-payment-actions button{padding:11px;border:0;border-radius:11px;font:700 12px Tahoma,Arial,sans-serif}.ta-advance-payment-save{background:#059669;color:#fff}.ta-advance-payment-cancel{background:#26354d;color:#e2e8f0;border:1px solid #5369b8!important}.ta-advance-payment-status{min-height:17px;margin-top:9px;color:#86efac;font-size:11px}
+</style>
+<script id="advance-payment-v1">
+(function(){
+  'use strict';
+  var historyKey='finance_months_v2';
+  function clean(value){return String(value||'').replace(/\s+/g,' ').trim();}
+  function monthKey(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');}
+  function nextMonth(offset){var date=new Date();date.setMonth(date.getMonth()+offset);return monthKey(date);}
+  function label(key){try{var a=key.split('-');return new Date(Number(a[0]),Number(a[1])-1,1).toLocaleDateString('ar-EG',{month:'long',year:'numeric'});}catch(error){return key;}}
+  function read(key,fallback){try{var value=JSON.parse(localStorage.getItem(key)||'');return value==null?fallback:value;}catch(error){return fallback;}}
+  function students(){var value=read('students',[]);return Array.isArray(value)?value:[];}
+  function history(){var value=read(historyKey,{});return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}
+  function snapshot(target){var all=history(),saved=Array.isArray(all[target])?all[target]:[],byId={};saved.forEach(function(item){if(item&&item.id!==undefined)byId[String(item.id)]=item;});return students().map(function(item){var old=byId[String(item.id)],copy=Object.assign({},item,{paidStatus:'unpaid'});delete copy.lastPaymentDate;if(old&&old.paidStatus){copy.paidStatus=old.paidStatus;if(old.lastPaymentDate)copy.lastPaymentDate=old.lastPaymentDate;}return copy;});}
+  function paidCount(target){var list=history()[target]||[];return list.filter(function(item){return item&&item.paidStatus==='paid';}).length;}
+  function close(){var modal=document.querySelector('.ta-advance-payment-modal');if(modal)modal.remove();}
+  function open(){
+    if(!students().length){alert('أضف الطلاب أولًا قبل تسجيل دفعة مقدمة.');return;}
+    var modal=document.createElement('div');modal.className='ta-advance-payment-modal';modal.innerHTML='<section class="ta-advance-payment-box"><h3>تسجيل دفعة مقدمة</h3><p>تُسجل هذه الدفعة للشهر القادم فقط، ولن تتغير حالة الطالب في الشهر الحالي.</p><label>شهر الدفعة</label><select data-month></select><label>المجموعة</label><select data-group></select><label>الطالب</label><select data-student></select><div class="ta-advance-payment-status"></div><div class="ta-advance-payment-actions"><button type="button" class="ta-advance-payment-cancel">إلغاء</button><button type="button" class="ta-advance-payment-save">تسجيل مدفوع ✓</button></div></section>';document.body.appendChild(modal);
+    var month=modal.querySelector('[data-month]'),group=modal.querySelector('[data-group]'),student=modal.querySelector('[data-student]'),status=modal.querySelector('.ta-advance-payment-status'),groups=[];
+    [nextMonth(1),nextMonth(2)].forEach(function(key,index){var option=document.createElement('option');option.value=key;option.textContent=label(key)+(index===0?' (الشهر القادم)':'');month.appendChild(option);});
+    students().forEach(function(item){var name=clean(item.group)||'بدون مجموعة';if(groups.indexOf(name)<0)groups.push(name);});group.innerHTML='<option value="">كل المجموعات</option>'+groups.map(function(name){return '<option value="'+name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+name.replace(/</g,'&lt;')+'</option>';}).join('');
+    function fill(){var wanted=group.value,list=students().filter(function(item){return !wanted||clean(item.group)===wanted;});student.innerHTML='<option value="__all">كل طلاب '+(wanted||'المجموعات')+'</option>'+list.map(function(item){return '<option value="'+String(item.id).replace(/"/g,'&quot;')+'">'+String(item.name||'طالب').replace(/</g,'&lt;')+' — '+clean(item.group)+'</option>';}).join('');}
+    group.onchange=fill;fill();modal.querySelector('.ta-advance-payment-cancel').onclick=close;modal.onclick=function(event){if(event.target===modal)close();};
+    modal.querySelector('.ta-advance-payment-save').onclick=function(){var target=month.value,wantedGroup=group.value,wantedStudent=student.value,list=snapshot(target),count=0;list=list.map(function(item){var match=wantedStudent==='__all'?(!wantedGroup||clean(item.group)===wantedGroup):String(item.id)===wantedStudent;if(!match)return item;count++;return Object.assign({},item,{paidStatus:'paid',lastPaymentDate:new Date().toISOString(),advancePaymentRecordedAt:new Date().toISOString()});});if(!count){status.textContent='اختر طالبًا أو مجموعة تحتوي طلابًا.';return;}var all=history();all[target]=list;localStorage.setItem(historyKey,JSON.stringify(all));status.textContent='تم تسجيل '+count+' طالب لشهر '+label(target)+' ✓';window.dispatchEvent(new Event('ta:advance-payment'));setTimeout(close,700);};
+  }
+  function install(){var box=document.getElementById('finance-month-switcher-v2'),browse=localStorage.getItem('finance_browse_month_v2');if(!box)return;var old=box.querySelector('.ta-advance-payment-launch');if(browse){if(old)old.remove();return;}if(old)return;var target=nextMonth(1),button=document.createElement('button');button.type='button';button.className='ta-advance-payment-launch';button.innerHTML='💳 تسجيل دفعة للشهر القادم: <b>'+label(target)+'</b>'+(paidCount(target)?' · مسجل '+paidCount(target)+' طالب':'');button.onclick=open;box.appendChild(button);}
+  var queued=false;function schedule(){if(queued)return;queued=true;setTimeout(function(){queued=false;install();},80);}document.addEventListener('click',schedule,true);new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('ta:advance-payment',function(){var button=document.querySelector('.ta-advance-payment-launch'),target=nextMonth(1);if(button)button.innerHTML='💳 تسجيل دفعة للشهر القادم: <b>'+label(target)+'</b> · مسجل '+paidCount(target)+' طالب';});setTimeout(install,700);
+})();
+</script><script id="monthly-finance-history-write-v1">
+(function(){
+  'use strict';
+  function currentMonth(){var date=new Date();return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');}
+  function list(value){try{var items=JSON.parse(value||'[]');return Array.isArray(items)?items:null;}catch(error){return null;}}
+  function history(){try{var data=JSON.parse(localStorage.getItem('finance_months_v2')||'{}');return data&&typeof data==='object'&&!Array.isArray(data)?data:{};}catch(error){return {};}}
+  var previousSet=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(key,value){
+    if(key==='students'){
+      try{
+        var month=localStorage.getItem('finance_browse_month_v2')||'',items=list(value);
+        if(month&&month!==currentMonth()&&items){var all=history();all[month]=items;previousSet.call(this,'finance_months_v2',JSON.stringify(all));}
+      }catch(error){}
+    }
+    return previousSet.call(this,key,value);
+  };
 })();
 </script></body>
 </html>
