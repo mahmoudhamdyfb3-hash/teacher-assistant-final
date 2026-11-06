@@ -70,7 +70,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   color:#fff!important;
 }
 @media(max-width:600px){
-  
+
 }
 </style>
 
@@ -198,7 +198,7 @@ html.dark .ta-v40-btn,body.dark .ta-v40-btn,html.dark .ta-v40-tool,body.dark .ta
 </head>
 <body>
   <div id="root"></div>
-  
+
   <script id="monthly-finance-bootstrap">
 (function(){
   try{
@@ -241,7 +241,7 @@ html.dark .ta-v40-btn,body.dark .ta-v40-btn,html.dark .ta-v40-tool,body.dark .ta
   'use strict';
   var marker='ta_egypt_winter_time_2026_applied_v1';
   try{
-    var zone='';try{zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(ignore){} 
+    var zone='';try{zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(ignore){}
     if(zone!=='Africa/Cairo'||localStorage.getItem(marker)||Date.now()<new Date(2026,9,30,0,0,0,0).getTime())return;
     function pad(value){return String(value).padStart(2,'0');}
     function shiftClock(text){
@@ -500,7 +500,7 @@ function Rc(){let[n,e]=w.useState(new Date);w.useEffect(()=>{let v=setInterval((
 })();
 </script>
   <script>(function(){function m(a){var h=a.getAttribute("href");if(!h)return;try{var u=new URL(h,document.baseURI);if((u.protocol==="http:"||u.protocol==="https:")&&u.host!==location.host){a.target="_blank";a.rel="noopener noreferrer";}}catch(e){}}function s(){document.querySelectorAll("a[href]").forEach(m);}if(document.readyState!=="loading"){s();}else{document.addEventListener("DOMContentLoaded",s);}document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(a){m(a);}},true);})();</script>
-  
+
 
 <style id="sta-v7-enhancements">
 #sta-v7-fab{position:fixed;left:18px;bottom:88px;z-index:220;width:50px;height:50px;border-radius:16px;border:1px solid rgba(99,102,241,.25);background:#6366f1;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.18);font-size:21px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.18s}
@@ -878,7 +878,7 @@ var tries=0,t=setInterval(function(){if(build()||++tries>50)clearInterval(t)},50
       if(k===ck)localStorage.removeItem('finance_browse_month_v2');else localStorage.setItem('finance_browse_month_v2',k);
       localStorage.setItem('students',JSON.stringify(h[k]));
       // The React screen reads this state only on startup; return to Finance after its required refresh.
-      try{sessionStorage.setItem('finance_return_after_month_switch_v1','1');}catch(ignore){} 
+      try{sessionStorage.setItem('finance_return_after_month_switch_v1','1');}catch(ignore){}
       setTimeout(function(){location.reload();},0);
       return;
     }catch(e){console.error(e);}
@@ -1711,6 +1711,32 @@ document.body.appendChild(root);function view(name){root.querySelectorAll('.ppv1
     return previousSet.call(this,key,value);
   };
 })();
+</script><style id="phone-login-and-cloud-sync-v1-style">
+.ta-phone-cloud-card{margin:14px 0;padding:15px;border:1px solid #6366f155;border-radius:16px;background:linear-gradient(135deg,#eef2ff,#f8fafc);direction:rtl}.ta-phone-cloud-card b{display:block;color:#312e81;font-size:14px}.ta-phone-cloud-card p{margin:6px 0 11px;color:#475569;font-size:11px;line-height:1.65}.ta-phone-cloud-card button{border:0;border-radius:10px;background:#4f46e5;color:#fff;padding:10px 13px;font-weight:800;font-size:12px}.ta-phone-modal{display:none;position:fixed;z-index:2147483645;inset:0;align-items:center;justify-content:center;padding:18px;background:#111827a6;direction:rtl;font-family:Arial,Tahoma,sans-serif}.ta-phone-modal.open{display:flex}.ta-phone-box{width:min(100%,390px);padding:22px;border-radius:22px;background:#fff;color:#172033;box-shadow:0 18px 55px #0006}.ta-phone-box h2{margin:0 0 7px;font-size:19px}.ta-phone-box p{margin:0 0 14px;color:#64748b;font-size:12px;line-height:1.6}.ta-phone-box input{box-sizing:border-box;width:100%;padding:13px;margin:7px 0;border:1px solid #cbd5e1;border-radius:11px;font:700 16px Arial;direction:ltr;text-align:center}.ta-phone-box button{border:0;border-radius:11px;padding:12px 14px;font-weight:800}.ta-phone-main{width:100%;margin-top:8px;background:#4f46e5;color:#fff}.ta-phone-close{float:left;background:#eef2ff;color:#4338ca}.ta-phone-status{min-height:18px;margin-top:11px;color:#64748b;font-size:11px;line-height:1.5}.ta-phone-code{display:none}.ta-phone-box.wait .ta-phone-code{display:block}
+</style>
+<script id="phone-login-and-cloud-sync-v1">
+(function(){
+  'use strict';
+  var endpoint='https://teacher-assistant-otp.mahmoudhamdyfb51.workers.dev';
+  var userKey='ta_phone_auth_uid_v1';
+  var keys=['students','mosaed_groups','lessons','attendance','payments','subscription','teacherProfile','student_discounts_v1','finance_active_month_v2','finance_months_v2','ta_centers_v1','ta_teacher_exam_logo_v1','homework','examResults','results','studentNotes','notify_minutes','ta_parent_link_codes'];
+  var dialog,phone,code,status,submit,challenge='',syncTimer,received={},remoteFound=false,changed=false;
+  function clean(v){return String(v||'').replace(/\s+/g,' ').trim();}
+  function toast(message){var item=document.createElement('div');item.textContent=message;item.style.cssText='position:fixed;z-index:2147483647;bottom:88px;right:50%;transform:translateX(50%);background:#1e293b;color:#fff;padding:11px 14px;border-radius:12px;font:700 12px Arial;box-shadow:0 8px 25px #0005';document.body.appendChild(item);setTimeout(function(){item.remove();},3200);}
+  function uid(){try{return window.AndroidPhoneAuth&&window.AndroidPhoneAuth.currentUserId?String(window.AndroidPhoneAuth.currentUserId()||''):'';}catch(e){return '';}}
+  function logged(){return !!(localStorage.getItem(userKey)||uid());}
+  function post(body){return fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().catch(function(){return {};}).then(function(v){if(!r.ok)throw new Error(v.error||'تعذر الاتصال بالخدمة.');return v;});});}
+  function open(){if(!dialog)return;phone.value='';code.value='';challenge='';dialog.classList.remove('wait');status.textContent='اكتب رقمك المصري وسنرسل كود التأكيد.';submit.disabled=false;submit.textContent='إرسال كود التأكيد';dialog.classList.add('open');phone.focus();}
+  function close(){dialog&&dialog.classList.remove('open');}
+  function finishLogin(result){if(!result||!result.success){status.textContent=(result&&result.error)||'تعذر فتح الحساب.';submit.disabled=false;return;}localStorage.setItem(userKey,result.uid);localStorage.setItem('ta_parent_portal_preview_role','teacher');var preview=document.getElementById('parent-portal-preview-v1');if(preview)preview.remove();close();beginSync();toast('تم تأكيد الرقم. جارٍ حفظ بياناتك بأمان.');}
+  function send(){var value=clean(phone.value);if(!dialog.classList.contains('wait')){submit.disabled=true;status.textContent='جارٍ إرسال الكود…';post({action:'start',phone:value}).then(function(result){challenge=result.challengeId;dialog.classList.add('wait');status.textContent='أُرسل الكود. صلاحيته خمس دقائق.';submit.disabled=false;submit.textContent='تأكيد الكود';code.focus();}).catch(function(error){status.textContent=error.message;submit.disabled=false;});return;}var entered=clean(code.value);if(!/^\d{6}$/.test(entered)){status.textContent='اكتب كودًا من 6 أرقام.';return;}submit.disabled=true;status.textContent='جارٍ تأكيد الكود…';post({action:'verify',challengeId:challenge,code:entered}).then(function(result){if(!window.AndroidPhoneAuth){throw new Error('تسجيل الهاتف يعمل من داخل التطبيق فقط.');}window.AndroidPhoneAuth.signInWithCustomToken(result.customToken);}).catch(function(error){status.textContent=error.message;submit.disabled=false;});}
+  function installCard(){var title=Array.from(document.querySelectorAll('h1,h2,h3')).find(function(n){return clean(n.textContent)==='الإعدادات';});var old=document.getElementById('ta-phone-cloud-card');if(!title){if(old)old.remove();return;}if(old)return;var host=title.parentElement&&title.parentElement.parentElement;if(!host)return;var card=document.createElement('section');card.id='ta-phone-cloud-card';card.className='ta-phone-cloud-card';card.innerHTML='<b>☁️ الحساب والمزامنة</b><p>'+ (logged()?'بياناتك محفوظة بحسابك ويمكن فتحها من هاتف آخر.':'سجّل برقم هاتفك لحفظ الطلاب والحصص والمالية على حسابك.') +'</p><button type="button">'+(logged()?'بياناتي محفوظة ✓':'تسجيل الدخول برقم الهاتف')+'</button>';card.querySelector('button').onclick=open;host.insertBefore(card,host.firstChild);}
+  function pushAll(){if(!logged()||!window.AndroidFirebaseData)return;keys.forEach(function(key){window.AndroidFirebaseData.syncPersonalState(key,localStorage.getItem(key)||'');});}
+  function beginSync(){if(!logged()||!window.AndroidFirebaseData)return;received={};remoteFound=false;changed=false;keys.forEach(function(key){window.AndroidFirebaseData.loadPersonalState(key);});setTimeout(function(){if(remoteFound){if(changed){sessionStorage.setItem('ta_phone_sync_refreshed_v1','1');location.reload();}}else{pushAll();}},1600);if(syncTimer)clearInterval(syncTimer);syncTimer=setInterval(pushAll,10000);}
+  function build(){if(document.getElementById('ta-phone-modal'))return;dialog=document.createElement('div');dialog.id='ta-phone-modal';dialog.className='ta-phone-modal';dialog.innerHTML='<section class="ta-phone-box"><button class="ta-phone-close" type="button">×</button><h2>حفظ بياناتك بحسابك</h2><p>سجل برقمك المصري. ستظهر بياناتك على أي هاتف تدخل منه بنفس الرقم.</p><input class="ta-phone-number" inputmode="tel" autocomplete="tel" placeholder="01012345678"><input class="ta-phone-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="كود التأكيد من 6 أرقام"><button class="ta-phone-main" type="button">إرسال كود التأكيد</button><div class="ta-phone-status"></div></section>';document.body.appendChild(dialog);phone=dialog.querySelector('.ta-phone-number');code=dialog.querySelector('.ta-phone-code');status=dialog.querySelector('.ta-phone-status');submit=dialog.querySelector('.ta-phone-main');submit.onclick=send;dialog.querySelector('.ta-phone-close').onclick=close;dialog.onclick=function(e){if(e.target===dialog)close();};installCard();if(logged())beginSync();}
+  window.addEventListener('teacherassistant:phone-auth',function(event){finishLogin(event.detail||{});});
+  window.addEventListener('teacherassistant:personal-state',function(event){var data=event.detail||{};if(data.error||!keys.includes(data.key)||received[data.key])return;received[data.key]=true;if(data.exists){remoteFound=true;var current=localStorage.getItem(data.key)||'',value=String(data.value||'');if(current!==value){localStorage.setItem(data.key,value);changed=true;}}});
+  var queued=false;function schedule(){if(queued)return;queued=true;setTimeout(function(){queued=false;installCard();},80);}new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});setTimeout(build,700);
+})();
 </script></body>
 </html>
-

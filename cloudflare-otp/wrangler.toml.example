@@ -1,0 +1,8 @@
+name = "teacher-assistant-otp"
+main = "src/index.js"
+compatibility_date = "2026-11-06"
+
+# Add the KV namespace ID after creating it in the Cloudflare dashboard.
+[[kv_namespaces]]
+binding = "OTP_STORE"
+id = "PASTE_KV_NAMESPACE_ID_HERE"

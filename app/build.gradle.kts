@@ -11,8 +11,8 @@ android {
         applicationId = "com.mahmoud.teacherassistant"
         minSdk = 24
         targetSdk = 36
-        versionCode = 110
-        versionName = "1.28.0"
+        versionCode = 112
+        versionName = "1.30.0"
     }
 
   signingConfigs {
@@ -65,4 +65,3 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
 }
-

@@ -181,6 +181,11 @@ public class MainActivity extends Activity {
         );
 
         webView.addJavascriptInterface(
+                new AndroidPhoneAuth(),
+                "AndroidPhoneAuth"
+        );
+
+        webView.addJavascriptInterface(
                 new AndroidFirebaseTeam(),
                 "AndroidFirebaseTeam"
         );
@@ -574,6 +579,38 @@ public class MainActivity extends Activity {
         }
     }
 
+    private class AndroidPhoneAuth {
+        @JavascriptInterface
+        public void signInWithCustomToken(String customToken) {
+            if (customToken == null || customToken.trim().isEmpty()) {
+                sendPhoneAuthResult(false, "رمز الدخول غير صالح.", "");
+                return;
+            }
+            FirebaseAuth.getInstance().signInWithCustomToken(customToken.trim())
+                    .addOnCompleteListener(task -> {
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        sendPhoneAuthResult(task.isSuccessful() && user != null,
+                                task.isSuccessful() ? "" : firebaseError(task.getException()),
+                                user == null ? "" : user.getUid());
+                    });
+        }
+        @JavascriptInterface
+        public void signOut() { FirebaseAuth.getInstance().signOut(); }
+
+        @JavascriptInterface
+        public String currentUserId() {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            return user == null ? "" : user.getUid();
+        }
+    }
+
+    private void sendPhoneAuthResult(boolean success, String error, String uid) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:phone-auth',{detail:{success:"
+                + success + ",error:" + JSONObject.quote(error == null ? "" : error)
+                + ",uid:" + JSONObject.quote(uid == null ? "" : uid) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
     private String firebaseError(Exception error) {
         return error == null || error.getMessage() == null
                 ? "تعذر إتمام تسجيل الدخول. حاول مرة أخرى."
@@ -755,12 +792,43 @@ public class MainActivity extends Activity {
         webView.evaluateJavascript(js, null);
     }
 
+    private void sendPersonalState(String key, boolean exists, String value, String error) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:personal-state',{detail:{key:"
+                + JSONObject.quote(key == null ? "" : key)
+                + ",exists:" + exists
+                + ",value:" + JSONObject.quote(value == null ? "" : value)
+                + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
     private void sendWorkspaceState(String key, String value) {
         if (webView == null) return;
         String js = "window.dispatchEvent(new CustomEvent('teacherassistant:workspace-state',{detail:{key:"
                 + JSONObject.quote(key == null ? "" : key) + ",value:"
                 + JSONObject.quote(value == null ? "{}" : value) + "}}));";
         webView.evaluateJavascript(js, null);
+    }
+
+        @JavascriptInterface
+        public void syncPersonalState(String key, String value) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null || key == null || !key.matches("[a-zA-Z0-9_-]{1,80}")) return;
+            Map<String, Object> state = new HashMap<>();
+            state.put("value", value == null ? "" : value);
+            state.put("updatedAt", FieldValue.serverTimestamp());
+            FirebaseFirestore.getInstance().collection("workspaces").document(user.getUid())
+                    .collection("sharedState").document(key).set(state);
+        }
+
+        @JavascriptInterface
+        public void loadPersonalState(String key) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null || key == null || !key.matches("[a-zA-Z0-9_-]{1,80}")) return;
+            FirebaseFirestore.getInstance().collection("workspaces").document(user.getUid())
+                    .collection("sharedState").document(key).get()
+                    .addOnSuccessListener(doc -> sendPersonalState(key, doc.exists(), doc.exists() ? doc.getString("value") : "", ""))
+                    .addOnFailureListener(error -> sendPersonalState(key, false, "", firebaseError(error)));
+        }
     }
 
     private class AndroidFirebaseTeam {
