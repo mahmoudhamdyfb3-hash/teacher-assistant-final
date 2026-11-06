@@ -774,6 +774,27 @@ public class MainActivity extends Activity {
                     })
                     .addOnFailureListener(error -> sendStudentLinkResult(false, firebaseError(error), ""));
         }
+
+        @JavascriptInterface
+        public void syncPersonalState(String key, String value) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null || key == null || !key.matches("[a-zA-Z0-9_-]{1,80}")) return;
+            Map<String, Object> state = new HashMap<>();
+            state.put("value", value == null ? "" : value);
+            state.put("updatedAt", FieldValue.serverTimestamp());
+            FirebaseFirestore.getInstance().collection("workspaces").document(user.getUid())
+                    .collection("sharedState").document(key).set(state);
+        }
+
+        @JavascriptInterface
+        public void loadPersonalState(String key) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null || key == null || !key.matches("[a-zA-Z0-9_-]{1,80}")) return;
+            FirebaseFirestore.getInstance().collection("workspaces").document(user.getUid())
+                    .collection("sharedState").document(key).get()
+                    .addOnSuccessListener(doc -> sendPersonalState(key, doc.exists(), doc.exists() ? doc.getString("value") : "", ""))
+                    .addOnFailureListener(error -> sendPersonalState(key, false, "", firebaseError(error)));
+        }
     }
 
     private void sendStudentLinkResult(boolean success, String error, String studentJson) {
@@ -807,28 +828,6 @@ public class MainActivity extends Activity {
                 + JSONObject.quote(key == null ? "" : key) + ",value:"
                 + JSONObject.quote(value == null ? "{}" : value) + "}}));";
         webView.evaluateJavascript(js, null);
-    }
-
-        @JavascriptInterface
-        public void syncPersonalState(String key, String value) {
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null || key == null || !key.matches("[a-zA-Z0-9_-]{1,80}")) return;
-            Map<String, Object> state = new HashMap<>();
-            state.put("value", value == null ? "" : value);
-            state.put("updatedAt", FieldValue.serverTimestamp());
-            FirebaseFirestore.getInstance().collection("workspaces").document(user.getUid())
-                    .collection("sharedState").document(key).set(state);
-        }
-
-        @JavascriptInterface
-        public void loadPersonalState(String key) {
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null || key == null || !key.matches("[a-zA-Z0-9_-]{1,80}")) return;
-            FirebaseFirestore.getInstance().collection("workspaces").document(user.getUid())
-                    .collection("sharedState").document(key).get()
-                    .addOnSuccessListener(doc -> sendPersonalState(key, doc.exists(), doc.exists() ? doc.getString("value") : "", ""))
-                    .addOnFailureListener(error -> sendPersonalState(key, false, "", firebaseError(error)));
-        }
     }
 
     private class AndroidFirebaseTeam {
