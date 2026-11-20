@@ -1,6 +1,8 @@
 # Teacher Assistant OTP Worker
 
-This Worker replaces Firebase Cloud Functions. It sends ZADX OTP messages and returns a Firebase custom token after verification.
+This Worker replaces Firebase Cloud Functions. Egyptian numbers receive ZADX OTP messages; all other countries use Akedly (WhatsApp first, then the SMS fallback configured in Akedly). It returns a Firebase custom token after verification.
+
+The application stores the verified phone identity in the Worker. When a teacher changes their phone number from Settings, the new number is verified by OTP and stays attached to the same Firebase account, so their cloud data remains available.
 
 ## Cloudflare setup
 
@@ -10,10 +12,14 @@ This Worker replaces Firebase Cloud Functions. It sends ZADX OTP messages and re
    - `ZADX_API_SECRET`
    - `OTP_PEPPER` — a new long random value, at least 32 characters.
    - `FIREBASE_SERVICE_ACCOUNT_JSON` — the complete contents of a newly created Firebase service-account JSON key.
-3. Add these as plain text variables:
+   - `AKEDLY_API_KEY` — the restricted API key created for the Teacher Assistant OTP integration.
+3. Add the following as a plain text variable:
+   - `AKEDLY_PIPELINE_ID` — the Integration ID of Teacher Assistant OTP.
+4. Keep these as plain text variables:
    - `ZADX_BASE_URL` = `https://smsapi.zadx.net/api/v1`
    - `ZADX_SENDER_ID` = `ZADX`
-4. Use **Edit code**, replace the Hello World source with `src/index.js`, then Deploy.
+5. In Akedly's integration **Security** tab, keep Proof-of-Work at **Fixed level 2** and leave Cloudflare Turnstile off. The Worker solves the level-2 challenge at the edge and also applies per-number and per-day limits before sending a code.
+6. Use **Edit code**, replace the Worker source with `src/index.js`, then Deploy.
 
 Never put any of these secrets in the Android application, Git, or chat.
 
