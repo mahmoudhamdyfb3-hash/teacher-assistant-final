@@ -1,4 +1,4 @@
-# Teacher Assistant 1.32.2
+# Teacher Assistant 1.32.3
 
 ## Included
 
@@ -8,6 +8,7 @@
 - Invalid/too-short/repeated-digit numbers are rejected before an OTP request is sent.
 - The verification-code field now appears immediately after the code is sent, and the login phone field keeps its Arabic label above a wider phone-number box.
 - A restored local backup is protected from a delayed empty cloud response and is uploaded immediately after restoration.
+- A complete cloud snapshot is saved alongside individual records and is used first on a new installation.
 - Egypt uses ZADX; every other selected country uses the configured Akedly OTP route.
 - Phone-code verification accepts the provider's 4 to 8 digit OTP length.
 - Fixed a verification request issue in the Cloudflare Worker.
@@ -15,6 +16,6 @@
 ## Publish both parts
 
 1. Replace the Cloudflare Worker code with `cloudflare-otp/src/index.js` and deploy it.
-2. Build and publish the Android app from this release. Its version is `1.32.2` (`versionCode 120`).
+2. Build and publish the Android app from this release. Its version is `1.32.3` (`versionCode 121`).
 
 Do not put the Akedly API key, Firebase service-account JSON, or any other secret into the Android project.
