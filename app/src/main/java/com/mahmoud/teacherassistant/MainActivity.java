@@ -783,7 +783,9 @@ public class MainActivity extends Activity {
             state.put("value", value == null ? "" : value);
             state.put("updatedAt", FieldValue.serverTimestamp());
             FirebaseFirestore.getInstance().collection("workspaces").document(user.getUid())
-                    .collection("sharedState").document(key).set(state);
+                    .collection("sharedState").document(key).set(state)
+                    .addOnSuccessListener(unused -> sendPersonalSync(key, true, ""))
+                    .addOnFailureListener(error -> sendPersonalSync(key, false, firebaseError(error)));
         }
 
         @JavascriptInterface
@@ -819,6 +821,15 @@ public class MainActivity extends Activity {
                 + JSONObject.quote(key == null ? "" : key)
                 + ",exists:" + exists
                 + ",value:" + JSONObject.quote(value == null ? "" : value)
+                + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private void sendPersonalSync(String key, boolean success, String error) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:personal-sync',{detail:{key:"
+                + JSONObject.quote(key == null ? "" : key)
+                + ",success:" + success
                 + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}));";
         webView.evaluateJavascript(js, null);
     }

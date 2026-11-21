@@ -1,4 +1,4 @@
-# Teacher Assistant 1.32.7
+# Teacher Assistant 1.32.8
 
 ## Included
 
@@ -13,6 +13,7 @@
 - Existing teachers open directly to their current home screen after updating and can activate their phone from a non-blocking in-app card.
 - The center is removed from teacher-profile editing; verified phone changes use the same country picker and OTP flow.
 - OTP confirmation remains valid when the user changes between Wi-Fi and mobile data after requesting the code.
+- Logout now waits for Firebase to confirm that the complete cloud backup was saved before it clears device data.
 - Egypt uses ZADX; every other selected country uses the configured Akedly OTP route.
 - Phone-code verification accepts the provider's 4 to 8 digit OTP length.
 - Fixed a verification request issue in the Cloudflare Worker.
@@ -20,6 +21,6 @@
 ## Publish both parts
 
 1. Replace the Cloudflare Worker code with `cloudflare-otp/src/index.js` and deploy it.
-2. Build and publish the Android app from this release. Its version is `1.32.7` (`versionCode 125`).
+2. Build and publish the Android app from this release. Its version is `1.32.8` (`versionCode 126`).
 
 Do not put the Akedly API key, Firebase service-account JSON, or any other secret into the Android project.
