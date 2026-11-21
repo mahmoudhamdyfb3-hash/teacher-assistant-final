@@ -82,14 +82,14 @@ async function begin(env, request, body) {
   const phone = normalizePhone(body.phone); if (!phone) throw new Error("اكتب رقم هاتف صحيحًا مع كود الدولة."); let uid = null;
   if (body.session) { const session = await readSession(env, body.session); if (!session) throw new Error("انتهت جلسة الحساب. سجّل الدخول مرة أخرى."); uid = session.uid; }
   await rateLimit(env, phone); const id = randomId();
-  const phoneId = await sha256(phone), ip = await sha256(request.headers.get("CF-Connecting-IP") || "");
-  if (isEgypt(phone)) { const code = String(Math.floor(100000 + Math.random() * 900000)); await sendZadx(env, phone, code, id); await save(env, `challenge:${id}`, { id, provider: "zadx", phone, phoneId, accountUid: uid, hash: await hmac(env.OTP_PEPPER, `${id}:${code}`), attempts: 0, ip }, 300); }
-  else { const record = await sendAkedly(env, request, phone, id); record.phoneId = phoneId; record.accountUid = uid; record.attempts = 0; record.ip = ip; await save(env, `challenge:${id}`, record, 300); }
+  const phoneId = await sha256(phone);
+  if (isEgypt(phone)) { const code = String(Math.floor(100000 + Math.random() * 900000)); await sendZadx(env, phone, code, id); await save(env, `challenge:${id}`, { id, provider: "zadx", phone, phoneId, accountUid: uid, hash: await hmac(env.OTP_PEPPER, `${id}:${code}`), attempts: 0 }, 300); }
+  else { const record = await sendAkedly(env, request, phone, id); record.phoneId = phoneId; record.accountUid = uid; record.attempts = 0; await save(env, `challenge:${id}`, record, 300); }
   return { challengeId: id, expiresIn: 300 };
 }
 async function complete(env, request, body) {
   const id = String(body.challengeId || ""), code = String(body.code || "").trim(); if (!/^[A-Za-z0-9_-]{20,}$/.test(id) || !/^\d{4,8}$/.test(code)) throw new Error("بيانات التحقق غير صحيحة.");
-  const record = await read(env, `challenge:${id}`); if (!record) throw new Error("انتهت صلاحية الكود. اطلب كودًا جديدًا."); if (record.ip && record.ip !== await sha256(request.headers.get("CF-Connecting-IP") || "")) throw new Error("لا يمكن تأكيد الكود من جهاز اتصال مختلف."); if (Number(record.attempts || 0) >= 5) { await env.OTP_STORE.delete(`challenge:${id}`); throw new Error("تم تجاوز عدد المحاولات. اطلب كودًا جديدًا."); }
+  const record = await read(env, `challenge:${id}`); if (!record) throw new Error("انتهت صلاحية الكود. اطلب كودًا جديدًا."); if (Number(record.attempts || 0) >= 5) { await env.OTP_STORE.delete(`challenge:${id}`); throw new Error("تم تجاوز عدد المحاولات. اطلب كودًا جديدًا."); }
   if (record.provider === "zadx") { if ((await hmac(env.OTP_PEPPER, `${id}:${code}`)) !== record.hash) { record.attempts = Number(record.attempts || 0) + 1; await save(env, `challenge:${id}`, record, 300); throw new Error("الكود غير صحيح."); } }
   else if (record.provider === "akedly") { const result = await akedlyRequest("/verify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ transactionReqID: record.transactionReqID, otp: code }) }); if (result.approved === false || result.verified === false) throw new Error("الكود غير صحيح."); }
   else throw new Error("تعذر معرفة خدمة التحقق.");
