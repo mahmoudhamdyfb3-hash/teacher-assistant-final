@@ -797,6 +797,27 @@ public class MainActivity extends Activity {
                     .addOnSuccessListener(doc -> sendPersonalState(key, doc.exists(), doc.exists() ? doc.getString("value") : "", ""))
                     .addOnFailureListener(error -> sendPersonalState(key, false, "", firebaseError(error)));
         }
+
+        // Older app versions already stored the teacher's real student records in
+        // the top-level students collection.  This is a read-only migration path:
+        // it lets a phone-login user recover those records into the newer snapshot.
+        @JavascriptInterface
+        public void loadPersonalStudents() {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null) return;
+            FirebaseFirestore.getInstance().collection("students")
+                    .whereEqualTo("teacherId", user.getUid()).get()
+                    .addOnSuccessListener(snapshot -> {
+                        JSONArray students = new JSONArray();
+                        for (com.google.firebase.firestore.DocumentSnapshot document : snapshot.getDocuments()) {
+                            String raw = document.getString("raw");
+                            if (raw == null) continue;
+                            try { students.put(new JSONObject(raw)); } catch (Exception ignored) { }
+                        }
+                        sendPersonalStudents(students.toString(), "");
+                    })
+                    .addOnFailureListener(error -> sendPersonalStudents("[]", firebaseError(error)));
+        }
     }
 
     private void sendStudentLinkResult(boolean success, String error, String studentJson) {
@@ -821,6 +842,14 @@ public class MainActivity extends Activity {
                 + JSONObject.quote(key == null ? "" : key)
                 + ",exists:" + exists
                 + ",value:" + JSONObject.quote(value == null ? "" : value)
+                + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}));";
+        webView.evaluateJavascript(js, null);
+    }
+
+    private void sendPersonalStudents(String studentsJson, String error) {
+        if (webView == null) return;
+        String js = "window.dispatchEvent(new CustomEvent('teacherassistant:personal-students',{detail:{students:"
+                + JSONObject.quote(studentsJson == null ? "[]" : studentsJson)
                 + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}));";
         webView.evaluateJavascript(js, null);
     }
