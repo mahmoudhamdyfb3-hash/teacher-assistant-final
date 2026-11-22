@@ -1,4 +1,4 @@
-# Teacher Assistant 1.33.0
+# Teacher Assistant 1.33.1
 
 ## Included
 
@@ -17,6 +17,8 @@
 - Empty or old blank cloud snapshots are ignored. They cannot overwrite teacher data or trigger a repeated home-screen refresh.
 - Cloud restore refreshes the interface at most once per app opening, preventing a refresh loop on slower networks.
 - Existing students in the older Firebase `students` collection are recovered automatically and migrated into the protected personal cloud snapshot.
+- Recovered group records are normalized before opening Groups, Attendance, or the timetable, avoiding a blank/crashed Groups screen.
+- Lessons and attendance history are never fabricated when the older cloud data contains students only.
 - Egypt uses ZADX; every other selected country uses the configured Akedly OTP route.
 - Phone-code verification accepts the provider's 4 to 8 digit OTP length.
 - Fixed a verification request issue in the Cloudflare Worker.
@@ -24,6 +26,6 @@
 ## Publish both parts
 
 1. Replace the Cloudflare Worker code with `cloudflare-otp/src/index.js` and deploy it.
-2. Build and publish the Android app from this release. Its version is `1.33.0` (`versionCode 128`).
+2. Build and publish the Android app from this release. Its version is `1.33.1` (`versionCode 129`).
 
 Do not put the Akedly API key, Firebase service-account JSON, or any other secret into the Android project.
