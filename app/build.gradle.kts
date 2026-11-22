@@ -11,8 +11,8 @@ android {
         applicationId = "com.mahmoud.teacherassistant"
         minSdk = 24
         targetSdk = 36
-        versionCode = 129
-        versionName = "1.33.1"
+        versionCode = 132
+        versionName = "1.34.0"
     }
 
   signingConfigs {
