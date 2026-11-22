@@ -1,4 +1,4 @@
-# Teacher Assistant 1.34.0
+# Teacher Assistant 1.34.1
 
 ## Included
 
@@ -20,6 +20,7 @@
 - Recovered group records are normalized before opening Groups, Attendance, or the timetable, avoiding a blank/crashed Groups screen.
 - When an older student record contains its fee, the recovered group now uses that saved fee instead of a blank amount.
 - Account access is now split into a phone-only sign-in screen and a separate account-creation screen for name, subject, and phone verification.
+- Fixed the sign-in tab so it remains labeled “تسجيل الدخول” and only the main action button starts authentication.
 - Teacher name and subject are included in the cloud backup even before students are added.
 - The verified-phone change card appears only in Settings, never on the account-creation screen.
 - Lessons and attendance history are never fabricated when the older cloud data contains students only.
@@ -30,6 +31,6 @@
 ## Publish both parts
 
 1. Replace the Cloudflare Worker code with `cloudflare-otp/src/index.js` and deploy it.
-2. Build and publish the Android app from this release. Its version is `1.34.0` (`versionCode 132`).
+2. Build and publish the Android app from this release. Its version is `1.34.1` (`versionCode 133`).
 
 Do not put the Akedly API key, Firebase service-account JSON, or any other secret into the Android project.
