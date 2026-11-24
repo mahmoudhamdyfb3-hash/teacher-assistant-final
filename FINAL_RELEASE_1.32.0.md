@@ -1,4 +1,4 @@
-# Teacher Assistant 1.34.3
+# Teacher Assistant 1.34.4
 
 ## Included
 
@@ -33,6 +33,6 @@
 ## Publish both parts
 
 1. Replace the Cloudflare Worker code with `cloudflare-otp/src/index.js` and deploy it.
-2. Build and publish the Android app from this release. Its version is `1.34.3` (`versionCode 135`).
+2. Build and publish the Android app from this release. Its version is `1.34.4` (`versionCode 136`).
 
 Do not put the Akedly API key, Firebase service-account JSON, or any other secret into the Android project.
