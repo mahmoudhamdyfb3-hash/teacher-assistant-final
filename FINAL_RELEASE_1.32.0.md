@@ -1,4 +1,4 @@
-# Teacher Assistant 1.34.4
+# Teacher Assistant 1.34.6
 
 ## Included
 
@@ -24,6 +24,8 @@
 - Settings now removes the center field entirely and replaces the phone field with a verified country-picker-and-code phone-change flow.
 - Existing local teachers must confirm a phone number before they can continue; their local data remains intact and is saved only after verification.
 - Teacher name and subject are included in the cloud backup even before students are added.
+- Automatic winter-time and daylight-saving schedule changes are permanently disabled. Saved group and lesson times are never changed by an update.
+- A one-time recovery returns group and lesson times affected by the former winter-time update by two hours, with a local safeguard that prevents the recovery from running again.
 - The verified-phone change card appears only in Settings, never on the account-creation screen.
 - Lessons and attendance history are never fabricated when the older cloud data contains students only.
 - Egypt uses ZADX; every other selected country uses the configured Akedly OTP route.
@@ -33,6 +35,6 @@
 ## Publish both parts
 
 1. Replace the Cloudflare Worker code with `cloudflare-otp/src/index.js` and deploy it.
-2. Build and publish the Android app from this release. Its version is `1.34.4` (`versionCode 136`).
+2. Build and publish the Android app from this release. Its version is `1.34.6` (`versionCode 138`).
 
 Do not put the Akedly API key, Firebase service-account JSON, or any other secret into the Android project.

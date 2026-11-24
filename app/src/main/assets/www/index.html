@@ -242,7 +242,40 @@ html.dark .ta-v40-btn,body.dark .ta-v40-btn,html.dark .ta-v40-tool,body.dark .ta
   var marker='ta_egypt_winter_time_2026_applied_v1';
   try{
     var zone='';try{zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(ignore){}
-    if(zone!=='Africa/Cairo'||localStorage.getItem(marker)||Date.now()<new Date(2026,9,30,0,0,0,0).getTime())return;
+    /* The prior winter-time migration could run again after a restore. Repair
+       only records marked as affected, once, then keep all future times intact. */
+    var recoveryMarker='ta_schedule_times_restored_after_winter_v1';
+    if(localStorage.getItem(marker)&&!localStorage.getItem(recoveryMarker)){
+      function restoreClock(text){
+        return String(text==null?'':text).replace(/(\d{1,2}):(\d{2})(\s*)(ص|م|AM|PM|am|pm)?/g,function(full,hour,minute,space,meridiem){
+          var h=Number(hour),m=String(meridiem||'').trim(),hasMeridiem=!!m;
+          if(!Number.isFinite(h)||h>23||Number(minute)>59)return full;
+          if(!hasMeridiem)return String((h+2)%24).padStart(2,'0')+':'+minute;
+          var hour24=(h%12)+((m==='م'||m.toLowerCase()==='pm')?12:0);
+          hour24=(hour24+2)%24;
+          var isPm=hour24>=12,nextHour=hour24%12||12;
+          var suffix=(m==='ص'||m==='م')?(isPm?'م':'ص'):(m===m.toLowerCase()?(isPm?'pm':'am'):(isPm?'PM':'AM'));
+          return String(nextHour).padStart(2,'0')+':'+minute+space+suffix;
+        });
+      }
+      function restoreKey(key){
+        var raw=localStorage.getItem(key);if(!raw)return;
+        var list=JSON.parse(raw);if(!Array.isArray(list))return;
+        var restored=list.map(function(item){
+          if(!item||typeof item!=='object')return item;
+          var copy=Object.assign({},item);
+          ['time','startTime','endTime'].forEach(function(key){if(typeof copy[key]==='string')copy[key]=restoreClock(copy[key]);});
+          if(Array.isArray(copy.times))copy.times=copy.times.map(restoreClock);
+          return copy;
+        });
+        localStorage.setItem(key,JSON.stringify(restored));
+      }
+      restoreKey('lessons');
+      restoreKey('mosaed_groups');
+      localStorage.setItem(recoveryMarker,'1');
+    }
+    /* Automatic winter-time and daylight-saving changes remain disabled. */
+    return;
     function pad(value){return String(value).padStart(2,'0');}
     function shiftClock(text){
       return String(text==null?'':text).replace(/(\d{1,2}):(\d{2})(\s*)(ص|م|AM|PM|am|pm)?/g,function(full,hour,minute,space,meridiem){
